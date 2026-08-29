@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Today's Live Login Dashboard</title>
 
-  <!-- Prevent Mobile Browser Stale Cache -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -252,7 +251,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="loadTelemetry()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="startFreshFetch()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -260,7 +259,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Loading...</span>
+        <span class="sync-timestamp" id="syncStatus">Syncing...</span>
       </div>
     </header>
 
@@ -285,7 +284,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Loading live workforce records...</div>
+      <div class="state-message">Synchronizing workforce login records...</div>
     </main>
 
     <footer class="app-footer">
@@ -324,22 +323,6 @@
       const parts = name.trim().split(' ').filter(Boolean);
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
-
-    // Direct Global Receiver
-    window.handleTelemetryResponse = function(response) {
-      if (!response || !response.data) {
-        document.getElementById('syncStatus').innerText = "Empty Data";
-        return;
-      }
-
-      workforceDataset = response.data;
-      document.getElementById('syncStatus').innerText = `Synced at ${response.updated}`;
-      if (response.shiftDate) {
-        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${response.shiftDate}`;
-      }
-
-      updateDashboard(workforceDataset);
-    };
 
     function updateDashboard(data) {
       const container = document.getElementById('portalContainer');
@@ -422,24 +405,49 @@
       renderCards(filtered);
     }
 
-    // Direct, Single Clean Injection (No Background Loops)
-    function loadTelemetry() {
+    // Chrome Mobile Bypass: Clean Script Loader with Self-Destroying Nonce
+    function startFreshFetch() {
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      const old = document.getElementById('active-stream-tag');
-      if (old) old.remove();
+      const oldTags = document.querySelectorAll('.tara-telemetry-tag');
+      oldTags.forEach(t => t.remove());
+
+      const dynamicCallback = `tara_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+      window[dynamicCallback] = function(payload) {
+        delete window[dynamicCallback];
+        const scriptEl = document.getElementById(dynamicCallback);
+        if (scriptEl) scriptEl.remove();
+
+        if (payload && payload.data) {
+          workforceDataset = payload.data;
+          document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
+          if (payload.shiftDate) {
+            document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
+          }
+          updateDashboard(workforceDataset);
+        }
+      };
 
       const script = document.createElement('script');
-      script.id = 'active-stream-tag';
-      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_ts=${Date.now()}`;
+      script.id = dynamicCallback;
+      script.className = 'tara-telemetry-tag';
+      script.type = 'text/javascript';
+      script.src = `${WEB_APP_URL}?callback=${dynamicCallback}&_rand=${Math.random()}`;
+      
       script.onerror = function() {
-        document.getElementById('syncStatus').innerText = "Sync Failed";
+        delete window[dynamicCallback];
+        script.remove();
+        if (workforceDataset.length === 0) {
+          document.getElementById('syncStatus').innerText = "Sync Failed";
+        }
       };
-      document.body.appendChild(script);
+
+      document.documentElement.appendChild(script);
     }
 
-    // Har baar page open ya reload hone par fresh load karega
-    window.onload = loadTelemetry;
+    // Single trigger on load
+    window.addEventListener('load', startFreshFetch);
   </script>
 </body>
 </html>
