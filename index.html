@@ -10,7 +10,7 @@
   <meta http-equiv="Expires" content="0">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -90,8 +90,8 @@
 
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
-      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
     }
 
     .header-actions {
@@ -258,7 +258,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="fetchLiveTelemetry()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="triggerScriptSync()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -266,7 +266,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Syncing stream...</span>
+        <span class="sync-timestamp" id="syncStatus">Connecting stream...</span>
       </div>
     </header>
 
@@ -291,7 +291,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Synchronizing workforce login records...</div>
+      <div class="state-message">Connecting to Google Apps Script Secure Gateway...</div>
     </main>
 
     <footer class="app-footer">
@@ -300,12 +300,9 @@
   </div>
 
   <script>
-    const SPREADSHEET_ID = "1jxkUaREVII_2SeRCG076fv__ONKs6AQHMMg8OGc9pvs";
-    const GID_LOGINS = "461503710";
-    const GID_DIRECTORY = "1318792633";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
 
     let workforceDataset = [];
-    let fboDirectoryCache = new Map();
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -329,126 +326,22 @@
       });
     }
 
-    function timeToSeconds(timeStr) {
-      if (!timeStr || typeof timeStr !== 'string') return 0;
-      const parts = timeStr.trim().split(':');
-      if (parts.length < 2) return 0;
-      return ((parseInt(parts[0], 10) || 0) * 3600) + 
-             ((parseInt(parts[1], 10) || 0) * 60) + 
-             ((parseInt(parts[2], 10) || 0));
-    }
-
-    function resolveStatus(netSec, isPartTime) {
-      const hours = netSec / 3600;
-      const now = new Date();
-      const currentHourDecimal = now.getHours() + (now.getMinutes() / 60);
-
-      if (isPartTime) {
-        if (hours >= 4.5) return { badge: "⭐ Target Exceeded", class: "badge-excellent", isMet: true };
-        if (hours >= 4.0) return { badge: "✅ Part-Time Met", class: "badge-fullday", isMet: true };
-        if (currentHourDecimal < 20.5) return { badge: "⏳ In Progress", class: "badge-progress" };
-        if (currentHourDecimal < 22.0) return { badge: "⚠️ Pending Hours", class: "badge-pending" };
-        return { badge: "❌ Target Not Met", class: "badge-absent" };
-      } else {
-        if (hours >= 8.0) return { badge: "⭐ Excellent Performance", class: "badge-excellent", isMet: true };
-        if (hours >= 7.0) return { badge: "✅ Full Day Met", class: "badge-fullday", isMet: true };
-        if (hours >= 4.0) return { badge: "⚠️ Half Day Recorded", class: "badge-halfday" };
-        if (currentHourDecimal < 20.5) return { badge: "⏳ In Progress", class: "badge-progress" };
-        if (currentHourDecimal < 22.0) return { badge: "⚠️ Pending Target", class: "badge-pending" };
-        return { badge: "❌ Target Not Met", class: "badge-absent" };
-      }
-    }
-
     function getInitials(name) {
       if (!name) return 'EX';
       const parts = name.trim().split(' ').filter(Boolean);
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
-    function getCellValue(cell) {
-      if (!cell) return "";
-      if (cell.f !== undefined && cell.f !== null) return String(cell.f).trim();
-      if (cell.v !== undefined && cell.v !== null) return String(cell.v).trim();
-      return "";
-    }
-
-    // Directory Callback
-    window.handleDirectoryData = function(res) {
-      if (res && res.table && res.table.rows) {
-        res.table.rows.forEach(r => {
-          if (!r || !r.c) return;
-          const name = getCellValue(r.c[0]).toLowerCase();
-          if (name) {
-            fboDirectoryCache.set(name, {
-              mentor: getCellValue(r.c[3]) || "Executive Office",
-              workingType: getCellValue(r.c[4]) || "Full-Time"
-            });
-          }
-        });
-      }
-    };
-
-    // Main Logins Callback
-    window.handleLoginData = function(res) {
-      if (!res || !res.table || !res.table.rows) {
-        document.getElementById('syncStatus').innerText = "Empty stream";
+    window.handleTelemetryResponse = function(response) {
+      if (!response || !response.data) {
+        document.getElementById('syncStatus').innerText = "Empty Data";
         return;
       }
 
-      const rows = res.table.rows;
-      const list = [];
-      let detectedDate = "";
-
-      // Starts reading rows from row 5 (index 4)
-      for (let i = 4; i < rows.length; i++) {
-        const r = rows[i];
-        if (!r || !r.c) continue;
-
-        const shiftDate = getCellValue(r.c[0]);
-        const execName = getCellValue(r.c[1]);
-        const loginTime = getCellValue(r.c[2]) || "--";
-        const grossLogin = getCellValue(r.c[3]) || "00:00:00";
-        const breakTime = getCellValue(r.c[4]) || "00:00:00";
-        const netLogin = getCellValue(r.c[5]) || "00:00:00";
-
-        if (!execName || execName === "0" || execName === "1" || execName.toLowerCase() === "executive name" || execName.length < 2) {
-          continue;
-        }
-
-        if (!detectedDate && shiftDate) {
-          detectedDate = shiftDate;
-        }
-
-        const profile = fboDirectoryCache.get(execName.toLowerCase()) || { mentor: "Executive Office", workingType: "Full-Time" };
-        const isPartTime = profile.workingType.toLowerCase().includes("part");
-
-        const netSec = timeToSeconds(netLogin);
-        const targetSec = isPartTime ? 14400 : 25200;
-        const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
-        const status = resolveStatus(netSec, isPartTime);
-
-        list.push({
-          date: shiftDate || "--",
-          name: execName,
-          mentor: profile.mentor,
-          workingType: isPartTime ? "Part-Time" : "Full-Time",
-          loginTime: loginTime,
-          totalLogin: grossLogin,
-          totalBreak: breakTime,
-          netLogin: netLogin,
-          badge: status.badge,
-          badgeClass: status.class,
-          isMet: status.isMet,
-          progressPct: progressPct
-        });
-      }
-
-      workforceDataset = list;
-
-      const updatedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
-      if (detectedDate) {
-        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${detectedDate}`;
+      workforceDataset = response.data;
+      document.getElementById('syncStatus').innerText = `Synced at ${response.updated}`;
+      if (response.shiftDate) {
+        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${response.shiftDate}`;
       }
 
       updateDashboard(workforceDataset);
@@ -535,35 +428,24 @@
       renderCards(filtered);
     }
 
-    function fetchLiveTelemetry() {
+    function triggerScriptSync() {
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      const oldDir = document.getElementById('script-gviz-dir');
-      if (oldDir) oldDir.remove();
-      const oldLogin = document.getElementById('script-gviz-login');
-      if (oldLogin) oldLogin.remove();
+      const oldScript = document.getElementById('apps-script-stream');
+      if (oldScript) oldScript.remove();
 
-      const ts = Date.now();
-
-      // Fetch Directory Script
-      const sDir = document.createElement('script');
-      sDir.id = 'script-gviz-dir';
-      sDir.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleDirectoryData&gid=${GID_DIRECTORY}&headers=0&_=${ts}`;
-      document.body.appendChild(sDir);
-
-      // Fetch Logins Script
-      const sLogin = document.createElement('script');
-      sLogin.id = 'script-gviz-login';
-      sLogin.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleLoginData&gid=${GID_LOGINS}&headers=0&_=${ts}`;
-      sLogin.onerror = () => {
-        document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
+      const script = document.createElement('script');
+      script.id = 'apps-script-stream';
+      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_=${Date.now()}`;
+      script.onerror = function() {
+        document.getElementById('syncStatus').innerText = "Connection Failed";
       };
-      document.body.appendChild(sLogin);
+      document.body.appendChild(script);
     }
 
     window.onload = () => {
-      fetchLiveTelemetry();
-      setInterval(fetchLiveTelemetry, 30000);
+      triggerScriptSync();
+      setInterval(triggerScriptSync, 25000);
     };
   </script>
 </body>
