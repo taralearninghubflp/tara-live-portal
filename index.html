@@ -2,532 +2,951 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Live Workforce Telemetry & Attendance Dashboard</title>
+
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Today's Live Login | TARA Talent Solutions</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
     :root {
       --bg: #070a12;
       --surface: #0f172a;
+      --surface-card: #131d38;
       --surface-sub: #1e293b;
       --border: rgba(255, 255, 255, 0.08);
-      --border-light: rgba(255, 255, 255, 0.15);
+      --border-focus: #3b82f6;
       --text: #f8fafc;
       --text-muted: #94a3b8;
+      --text-sub: #64748b;
       --accent: #3b82f6;
-      --header-bg: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
-      --hero-bg: linear-gradient(180deg, rgba(6, 78, 59, 0.5) 0%, rgba(2, 44, 34, 0.75) 100%);
-      --hero-border: rgba(16, 185, 129, 0.45);
-      --hero-label: #34d399;
-      --hero-value: #ecfdf5;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      
+      --badge-green-bg: rgba(16, 185, 129, 0.15);
+      --badge-green-text: #34d399;
+      --badge-green-border: rgba(16, 185, 129, 0.3);
+
+      --badge-teal-bg: rgba(20, 184, 166, 0.15);
+      --badge-teal-text: #2dd4bf;
+      --badge-teal-border: rgba(20, 184, 166, 0.3);
+
+      --badge-yellow-bg: rgba(245, 158, 11, 0.15);
+      --badge-yellow-text: #fbbf24;
+      --badge-yellow-border: rgba(245, 158, 11, 0.3);
+
+      --badge-blue-bg: rgba(59, 130, 246, 0.15);
+      --badge-blue-text: #60a5fa;
+      --badge-blue-border: rgba(59, 130, 246, 0.3);
+
+      --badge-orange-bg: rgba(249, 115, 22, 0.15);
+      --badge-orange-text: #fb923c;
+      --badge-orange-border: rgba(249, 115, 22, 0.3);
+
+      --badge-red-bg: rgba(239, 68, 68, 0.15);
+      --badge-red-text: #f87171;
+      --badge-red-border: rgba(239, 68, 68, 0.3);
+
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     [data-theme="light"] {
-      --bg: #f1f5f9;
+      --bg: #f8fafc;
       --surface: #ffffff;
-      --surface-sub: #f8fafc;
-      --border: #e2e8f0;
-      --border-light: #cbd5e1;
+      --surface-card: #f1f5f9;
+      --surface-sub: #e2e8f0;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-focus: #2563eb;
       --text: #0f172a;
-      --text-muted: #64748b;
+      --text-muted: #475569;
+      --text-sub: #94a3b8;
       --accent: #2563eb;
-      --header-bg: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-      --hero-bg: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
-      --hero-border: #86efac;
-      --hero-label: #166534;
-      --hero-value: #14532d;
+      --accent-glow: rgba(37, 99, 235, 0.15);
+      --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 580px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
-
-    .master-header {
-      background: var(--header-bg);
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #ffffff;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    
-    .live-badge {
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .telemetry-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 4px 10px;
-      border-radius: 99px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 3px 10px;
+      border-radius: 9999px;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: 0.05em;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #10b981;
+      width: fit-content;
     }
 
     .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: #22c55e;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
+      background: #10b981;
       animation: pulse 1.8s infinite;
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
-      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    .header-actions { display: flex; align-items: center; gap: 6px; }
-    .btn-action {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #ffffff;
-      padding: 6px 11px;
-      border-radius: 9px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
+    .main-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 8px;
     }
 
-    .header-heading-title {
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      line-height: 1.15;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-
-    .header-info-strip {
+    .header-meta {
+      font-size: 12px;
+      color: var(--text-muted);
       display: flex;
-      justify-content: space-between;
+      gap: 12px;
       align-items: center;
-      background: rgba(0, 0, 0, 0.25);
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-size: 11px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-sub);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
       font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
     }
-    .shift-tag { color: #93c5fd; }
-    .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
 
-    .search-wrapper { position: relative; margin-bottom: 12px; }
-    .search-input {
-      width: 100%;
-      padding: 12px 16px 12px 38px;
+    .btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-icon {
+      padding: 8px 10px;
+    }
+
+    /* KPI Summary Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 13px;
-      color: var(--text);
-      outline: none;
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow);
     }
-    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
 
-    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-    .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
-    .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
-    .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+    .kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-sub);
+      color: var(--accent);
+    }
+
+    .kpi-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.1;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    /* Control Toolbar (Search & Filter) */
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px 12px 42px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Workforce Roster Grid */
+    .roster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
 
     .agent-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
-    .executive-info { display: flex; align-items: center; gap: 10px; }
-    .avatar-badge {
-      width: 36px;
-      height: 36px;
-      background: var(--surface-sub);
-      color: var(--accent);
-      font-weight: 800;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 10px;
-      flex-shrink: 0;
-      border: 1px solid var(--border);
-    }
-    .executive-name { font-size: 14px; font-weight: 700; color: var(--text); }
-    .meta-tags { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-    .tag-type { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .tag-pt { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .tag-ft { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .tag-mentor { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-
-    .badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-align: right; white-space: nowrap; }
-    .badge-excellent { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-fullday { background: rgba(20, 184, 166, 0.15); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.3); }
-    .badge-halfday { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-progress { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .badge-pending { background: rgba(249, 115, 22, 0.15); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.3); }
-    .badge-absent { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-
-    .metrics-container { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .sub-metrics-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--surface-sub);
-      padding: 6px 9px;
-      border-radius: 6px;
-      font-size: 11px;
-    }
-    .metric-title { color: var(--text-muted); font-weight: 500; }
-    .metric-data { font-weight: 700; color: var(--text); font-feature-settings: "tnum"; }
-
-    .hero-net-metric {
-      background: var(--hero-bg);
-      border: 1.5px solid var(--hero-border);
-      border-radius: 10px;
-      padding: 8px;
+      border-radius: var(--radius);
+      padding: 18px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
+      gap: 14px;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: var(--transition);
     }
-    .hero-label { font-size: 9px; font-weight: 800; color: var(--hero-label); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-    .hero-value { font-size: 19px; font-weight: 800; color: var(--hero-value); font-feature-settings: "tnum"; }
 
-    .progress-bar-wrap { background: var(--surface-sub); height: 5px; border-radius: 99px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: #10b981; border-radius: 99px; }
+    .agent-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
 
-    .app-footer { text-align: center; padding: 18px 8px 24px 8px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
-    .state-message { text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; }
+    .agent-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .agent-identity {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .agent-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .agent-name {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .agent-sub {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .pill-type {
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .pill-ft { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .pill-pt { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+    /* Badges */
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      align-self: flex-start;
+    }
+
+    .badge-green { background: var(--badge-green-bg); color: var(--badge-green-text); border-color: var(--badge-green-border); }
+    .badge-teal { background: var(--badge-teal-bg); color: var(--badge-teal-text); border-color: var(--badge-teal-border); }
+    .badge-yellow { background: var(--badge-yellow-bg); color: var(--badge-yellow-text); border-color: var(--badge-yellow-border); }
+    .badge-blue { background: var(--badge-blue-bg); color: var(--badge-blue-text); border-color: var(--badge-blue-border); }
+    .badge-orange { background: var(--badge-orange-bg); color: var(--badge-orange-text); border-color: var(--badge-orange-border); }
+    .badge-red { background: var(--badge-red-bg); color: var(--badge-red-text); border-color: var(--badge-red-border); }
+
+    /* Net Hero Section */
+    .net-hero {
+      background: var(--surface-card);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border: 1px solid var(--border);
+    }
+
+    .net-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    .net-time {
+      font-size: 24px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+      letter-spacing: -0.03em;
+    }
+
+    .target-pct {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    /* Sub Stats Grid */
+    .stats-subgrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .stat-item {
+      background: var(--surface-card);
+      padding: 8px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-sub);
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+    }
+
+    /* Target Progress Bar */
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--surface-sub);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Empty and Error State */
+    .state-banner {
+      grid-column: 1 / -1;
+      padding: 48px 24px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Sync Spinner */
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 20px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .container { padding: 12px; gap: 14px; }
+      header { padding: 14px; }
+      .main-title { font-size: 18px; }
+      .roster-grid { grid-template-columns: 1fr; }
+      .header-actions { width: 100%; justify-content: flex-end; }
+    }
   </style>
 </head>
 <body>
 
-  <div id="captureArea">
-    <header class="master-header">
-      <div class="header-top-row">
-        <div class="live-badge">
+  <div class="container" id="capture-root">
+    <header>
+      <div class="header-left">
+        <div class="telemetry-pill">
           <span class="pulse-dot"></span>
-          <span>LIVE TELEMETRY</span>
+          LIVE TELEMETRY
         </div>
-        <div class="header-actions">
-          <button class="btn-action" onclick="toggleTheme()" id="themeBtn">☀️</button>
-          <button class="btn-action" onclick="captureScreen()">📸 Save</button>
-          <button class="btn-action" onclick="fetchLiveTelemetry()">↻ Sync</button>
+        <h1 class="main-title">
+          <i data-lucide="layout-dashboard" style="width: 22px; height: 22px; color: var(--accent);"></i>
+          TODAY'S LIVE LOGIN
+        </h1>
+        <div class="header-meta">
+          <span><i data-lucide="calendar" style="width: 13px; height: 13px; vertical-align: -2px;"></i> <strong id="shift-date">--/--/----</strong></span>
+          <span>•</span>
+          <span>Synced at: <strong id="sync-time">--:--:--</strong></span>
         </div>
       </div>
 
-      <div class="header-heading-title">TODAY'S LIVE LOGIN</div>
-
-      <div class="header-info-strip">
-        <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Syncing live...</span>
+      <div class="header-actions">
+        <button class="btn" id="btn-sync" onclick="fetchTelemetry(true)" title="Force Refresh">
+          <i data-lucide="refresh-cw" id="sync-icon" style="width: 14px; height: 14px;"></i>
+          <span>Sync</span>
+        </button>
+        <button class="btn btn-icon" id="btn-capture" onclick="takeSnapshot()" title="Capture High-Res Image">
+          <i data-lucide="camera" style="width: 15px; height: 15px;"></i>
+        </button>
+        <button class="btn btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+          <i data-lucide="sun" id="theme-icon" style="width: 15px; height: 15px;"></i>
+        </button>
       </div>
     </header>
 
-    <div class="search-wrapper">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" class="search-input" placeholder="Search by executive or mentor..." onkeyup="filterPortalData()">
-    </div>
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon"><i data-lucide="users" style="width: 22px; height: 22px;"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value" id="kpi-active">0</div>
+          <div class="kpi-label">Active Team Members</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="color: #10b981;"><i data-lucide="check-circle" style="width: 22px; height: 22px;"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value" id="kpi-targets">0</div>
+          <div class="kpi-label">Target Met / Exceeded</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="color: #f59e0b;"><i data-lucide="clock" style="width: 22px; height: 22px;"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value" id="kpi-shift">0</div>
+          <div class="kpi-label">In Progress (Active Shift)</div>
+        </div>
+      </div>
+    </section>
 
-    <div class="kpi-row" id="kpiBar" style="display: none;">
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiTotal">0</div>
-        <div class="kpi-label">Active Team</div>
+    <section class="toolbar">
+      <div class="search-wrapper">
+        <i data-lucide="search" class="search-icon" style="width: 18px; height: 18px;"></i>
+        <input type="text" id="search-bar" class="search-input" placeholder="Search by executive or mentor name..." oninput="handleSearch(this.value)">
       </div>
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiCompleted" style="color: #34d399;">0</div>
-        <div class="kpi-label">Target Met</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiInProgress" style="color: #60a5fa;">0</div>
-        <div class="kpi-label">In Shift</div>
-      </div>
-    </div>
+    </section>
 
-    <main id="portalContainer">
-      <div class="state-message">Loading live workforce telemetry...</div>
+    <main class="roster-grid" id="roster-container">
+      <div class="state-banner">
+        <i data-lucide="loader" class="spin" style="width: 32px; height: 32px;"></i>
+        <p>Connecting to secure Google Sheets telemetry channel...</p>
+      </div>
     </main>
-
-    <footer class="app-footer">
-      Powered by TARA Talent Solutions
-    </footer>
   </div>
 
+  <footer>
+    Powered by <strong>TARA Talent Solutions</strong> • Live Telemetry Gateway
+  </footer>
+
   <script>
+    // Configuration
     const SPREADSHEET_ID = "1jxkUaREVII_2SeRCG076fv__ONKs6AQHMMg8OGc9pvs";
-    const GID_LOGIN = "461503710";
-    const GID_FBO = "1318792633";
+    const GID_LOGINS = "461503710";
+    const GID_DIRECTORY = "1318792633";
+    const REFRESH_INTERVAL_MS = 35000;
 
-    let workforceDataset = [];
+    let directoryMap = new Map();
+    let currentRawData = [];
+    let isFetching = false;
 
+    // Robust CSV parser supporting quotes and standard separators
+    function parseCSV(text) {
+      const p = [];
+      let row = [''];
+      let inQuotes = false;
+      let i = 0;
+      while (i < text.length) {
+        let c = text[i];
+        let next = text[i + 1];
+        if (c === '"') {
+          if (inQuotes && next === '"') {
+            row[row.length - 1] += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (c === ',' && !inQuotes) {
+          row.push('');
+        } else if ((c === '\r' || c === '\n') && !inQuotes) {
+          if (c === '\r' && next === '\n') { i++; }
+          p.push(row);
+          row = [''];
+        } else {
+          row[row.length - 1] += c;
+        }
+        i++;
+      }
+      if (row.length > 1 || row[0] !== '') {
+        p.push(row);
+      }
+      return p;
+    }
+
+    // Time to Seconds parser
+    function timeToSeconds(timeStr) {
+      if (!timeStr || typeof timeStr !== 'string') return 0;
+      const parts = timeStr.trim().split(':').map(Number);
+      if (parts.some(isNaN)) return 0;
+      if (parts.length === 3) {
+        return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+      } else if (parts.length === 2) {
+        return (parts[0] * 3600) + (parts[1] * 60);
+      }
+      return 0;
+    }
+
+    // Generate Initials
+    function getInitials(name) {
+      if (!name) return 'EX';
+      return name.split(' ')
+        .filter(n => Boolean(n))
+        .map(n => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+    }
+
+    // Evaluate Business Logic & Dynamic Badges
+    function evaluateStatus(workingType, netSeconds, now = new Date()) {
+      const netHours = netSeconds / 3600;
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const timeInMinutes = (currentHours * 60) + currentMinutes;
+
+      const time2030 = (20 * 60) + 30; // 20:30 (8:30 PM)
+      const time2200 = 22 * 60;        // 22:00 (10:00 PM)
+
+      const isPartTime = workingType.toLowerCase().includes('part');
+
+      if (isPartTime) {
+        if (netHours >= 4.5) return { text: "⭐ Target Exceeded", class: "badge-green", met: true };
+        if (netHours >= 4.0) return { text: "✅ Part-Time Met", class: "badge-teal", met: true };
+        if (timeInMinutes < time2030) return { text: "⏳ In Progress", class: "badge-blue", inShift: true };
+        if (timeInMinutes >= time2030 && timeInMinutes < time2200) return { text: "⚠️ Pending Hours", class: "badge-orange", inShift: true };
+        return { text: "❌ Target Not Met", class: "badge-red" };
+      } else {
+        if (netHours >= 8.0) return { text: "⭐ Excellent Performance", class: "badge-green", met: true };
+        if (netHours >= 7.0) return { text: "✅ Full Day Met", class: "badge-teal", met: true };
+        if (netHours >= 4.0) return { text: "⚠️ Half Day Recorded", class: "badge-yellow" };
+        if (timeInMinutes < time2030) return { text: "⏳ In Progress", class: "badge-blue", inShift: true };
+        if (timeInMinutes >= time2030 && timeInMinutes < time2200) return { text: "⚠️ Pending Target", class: "badge-orange", inShift: true };
+        return { text: "❌ Target Not Met", class: "badge-red" };
+      }
+    }
+
+    // Data Fetching & Processing Pipeline
+    async function fetchTelemetry(isManual = false) {
+      if (isFetching) return;
+      isFetching = true;
+      const syncIcon = document.getElementById('sync-icon');
+      if (syncIcon) syncIcon.classList.add('spin');
+
+      try {
+        const timestamp = Date.now();
+        const dirUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_DIRECTORY}&_=${timestamp}`;
+        const loginUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_LOGINS}&_=${timestamp}`;
+
+        // Fetch directory and logins concurrently
+        const [dirRes, loginRes] = await Promise.all([
+          fetch(dirUrl, { cache: "no-store" }),
+          fetch(loginUrl, { cache: "no-store" })
+        ]);
+
+        if (!dirRes.ok || !loginRes.ok) throw new Error("Google Sheets CSV endpoints unreachable");
+
+        const [dirText, loginText] = await Promise.all([dirRes.text(), loginRes.text()]);
+
+        // Process Directory
+        const dirRows = parseCSV(dirText);
+        directoryMap.clear();
+        for (let i = 1; i < dirRows.length; i++) {
+          const row = dirRows[i];
+          if (row[0] && row[0].trim()) {
+            const nameKey = row[0].trim().toLowerCase();
+            directoryMap.set(nameKey, {
+              mentor: row[3] ? row[3].trim() : 'Executive Office',
+              workingType: row[4] ? row[4].trim() : 'Full-Time'
+            });
+          }
+        }
+
+        // Process Logins (From Row 5 onwards)
+        const loginRows = parseCSV(loginText);
+        const processedList = [];
+        let detectedShiftDate = '--/--/----';
+
+        for (let i = 4; i < loginRows.length; i++) {
+          const row = loginRows[i];
+          if (!row || !row[1] || !row[1].trim()) continue; // Skip blank names
+
+          const shiftDate = row[0] ? row[0].trim() : '';
+          if (shiftDate && detectedShiftDate === '--/--/----') {
+            detectedShiftDate = shiftDate;
+          }
+
+          const rawName = row[1].trim();
+          const loginTime = row[2] ? row[2].trim() : '--';
+          const grossLogin = row[3] ? row[3].trim() : '00:00:00';
+          const breakTime = row[4] ? row[4].trim() : '00:00:00';
+          const netTime = row[5] ? row[5].trim() : '00:00:00';
+
+          const profile = directoryMap.get(rawName.toLowerCase()) || {
+            mentor: 'Executive Office',
+            workingType: 'Full-Time'
+          };
+
+          const netSec = timeToSeconds(netTime);
+          const isPartTime = profile.workingType.toLowerCase().includes('part');
+          const targetSec = isPartTime ? 14400 : 25200; // 4.0h vs 7.0h
+          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
+          const status = evaluateStatus(profile.workingType, netSec);
+
+          processedList.push({
+            name: rawName,
+            shiftDate,
+            loginTime,
+            grossLogin,
+            breakTime,
+            netTime,
+            netSec,
+            profile,
+            targetSec,
+            progressPct,
+            status
+          });
+        }
+
+        currentRawData = processedList;
+        document.getElementById('shift-date').textContent = detectedShiftDate;
+        document.getElementById('sync-time').textContent = new Date().toLocaleTimeString();
+
+        renderDashboard(currentRawData);
+      } catch (err) {
+        console.error("Telemetry Sync Failure:", err);
+        const container = document.getElementById('roster-container');
+        if (currentRawData.length === 0) {
+          container.innerHTML = `
+            <div class="state-banner" style="border-color: #ef4444; color: #ef4444;">
+              <i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i>
+              <p>Unable to retrieve real-time Google Sheets stream. Verify sheet sharing visibility.</p>
+            </div>
+          `;
+          lucide.createIcons();
+        }
+      } finally {
+        isFetching = false;
+        if (syncIcon) syncIcon.classList.remove('spin');
+      }
+    }
+
+    // Render Function
+    function renderDashboard(data) {
+      const container = document.getElementById('roster-container');
+      const searchQuery = (document.getElementById('search-bar').value || '').toLowerCase().trim();
+
+      const filtered = data.filter(item => {
+        return item.name.toLowerCase().includes(searchQuery) ||
+               item.profile.mentor.toLowerCase().includes(searchQuery);
+      });
+
+      // Update KPIs
+      let metCount = 0;
+      let shiftCount = 0;
+      data.forEach(item => {
+        if (item.status.met) metCount++;
+        if (item.status.inShift) shiftCount++;
+      });
+      document.getElementById('kpi-active').textContent = data.length;
+      document.getElementById('kpi-targets').textContent = metCount;
+      document.getElementById('kpi-shift').textContent = shiftCount;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="state-banner">
+            <i data-lucide="user-x" style="width: 32px; height: 32px;"></i>
+            <p>No matching workforce entries found.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isPT = item.profile.workingType.toLowerCase().includes('part');
+        const pillClass = isPT ? 'pill-pt' : 'pill-ft';
+        const pillText = isPT ? 'PT' : 'FT';
+
+        return `
+          <div class="agent-card">
+            <div class="agent-header">
+              <div class="agent-identity">
+                <div class="avatar">${getInitials(item.name)}</div>
+                <div class="agent-meta">
+                  <div class="agent-name">${item.name}</div>
+                  <div class="agent-sub">
+                    <span class="pill-type ${pillClass}">${pillText}</span>
+                    <span>•</span>
+                    <span>${item.profile.mentor}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="status-badge ${item.status.class}">${item.status.text}</span>
+            </div>
+
+            <div class="net-hero">
+              <div>
+                <div class="net-label">Net Production</div>
+                <div class="net-time">${item.netTime}</div>
+              </div>
+              <div class="target-pct">${item.progressPct}%</div>
+            </div>
+
+            <div class="progress-track">
+              <div class="progress-fill" style="width: ${item.progressPct}%;"></div>
+            </div>
+
+            <div class="stats-subgrid">
+              <div class="stat-item">
+                <span class="stat-label">Login</span>
+                <span class="stat-val">${item.loginTime}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Gross</span>
+                <span class="stat-val">${item.grossLogin}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Break</span>
+                <span class="stat-val">${item.breakTime}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // Instant Real-time Filter
+    function handleSearch() {
+      renderDashboard(currentRawData);
+    }
+
+    // Theme Switcher
     function toggleTheme() {
       const html = document.documentElement;
       const current = html.getAttribute('data-theme');
-      const target = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', target);
-      document.getElementById('themeBtn').innerText = target === 'dark' ? '☀️' : '🌙';
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      
+      const themeIcon = document.getElementById('theme-icon');
+      if (next === 'light') {
+        themeIcon.setAttribute('data-lucide', 'moon');
+      } else {
+        themeIcon.setAttribute('data-lucide', 'sun');
+      }
+      lucide.createIcons();
     }
 
-    function captureScreen() {
-      const target = document.getElementById('captureArea');
-      html2canvas(target, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
-      }).then(canvas => {
+    // HD Snapshot Capture
+    async function takeSnapshot() {
+      const root = document.getElementById('capture-root');
+      const btn = document.getElementById('btn-capture');
+      btn.disabled = true;
+      
+      try {
+        const canvas = await html2canvas(root, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+        });
         const link = document.createElement('a');
-        link.download = `Live_Login_${new Date().toISOString().slice(0,10)}.png`;
+        link.download = `Workforce_Telemetry_${new Date().toISOString().slice(0,10)}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-      });
-    }
-
-    function fetchGVizClean(gid) {
-      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}&_=${Date.now()}`;
-      return fetch(url)
-        .then(r => r.text())
-        .then(text => {
-          const start = text.indexOf('{');
-          const end = text.lastIndexOf('}');
-          if (start === -1 || end === -1) return null;
-          return JSON.parse(text.substring(start, end + 1));
-        });
-    }
-
-    function getCellValue(cell) {
-      if (!cell) return "";
-      return cell.f ? cell.f : (cell.v !== null && cell.v !== undefined ? cell.v.toString() : "");
-    }
-
-    function timeToSeconds(timeStr) {
-      if (!timeStr || !timeStr.includes(":")) return 0;
-      const parts = timeStr.split(":");
-      return ((parseInt(parts[0], 10) || 0) * 3600) + ((parseInt(parts[1], 10) || 0) * 60) + (parseInt(parts[2], 10) || 0);
-    }
-
-    function resolveStatus(netSec, isPartTime) {
-      const hours = netSec / 3600;
-      const now = new Date();
-      const curHour = now.getHours() + (now.getMinutes() / 60);
-
-      if (isPartTime) {
-        if (hours >= 4.5) return "⭐ Target Exceeded";
-        if (hours >= 4.0) return "✅ Part-Time Met";
-        if (curHour < 20.5) return "⏳ In Progress";
-        if (curHour < 22.0) return "⚠️ Pending Hours";
-        return "❌ Target Not Met";
-      } else {
-        if (hours >= 8.0) return "⭐ Excellent Performance";
-        if (hours >= 7.0) return "✅ Full Day Met";
-        if (hours >= 4.0) return "⚠️ Half Day Recorded";
-        if (curHour < 20.5) return "⏳ In Progress";
-        if (curHour < 22.0) return "⚠️ Pending Target";
-        return "❌ Target Not Met";
-      }
-    }
-
-    async function fetchLiveTelemetry() {
-      document.getElementById('syncStatus').innerText = "Syncing live...";
-
-      try {
-        const [loginJson, fboJson] = await Promise.all([
-          fetchGVizClean(GID_LOGIN),
-          fetchGVizClean(GID_FBO).catch(() => null)
-        ]);
-
-        if (!loginJson || !loginJson.table || !loginJson.table.rows) {
-          throw new Error("Invalid sheet response");
-        }
-
-        // 1. Build FBO Map
-        const fboMap = {};
-        if (fboJson && fboJson.table && fboJson.table.rows) {
-          fboJson.table.rows.forEach(r => {
-            const c = r.c;
-            if (c && c[0]) {
-              const name = getCellValue(c[0]).trim().toLowerCase();
-              if (name) {
-                fboMap[name] = {
-                  mentor: getCellValue(c[3]) || "--",
-                  workingType: getCellValue(c[4]) || "Full-Time"
-                };
-              }
-            }
-          });
-        }
-
-        // 2. Build Login List (Sheet rows start after headers)
-        const rows = loginJson.table.rows;
-        const list = [];
-
-        for (let i = 0; i < rows.length; i++) {
-          const c = rows[i].c;
-          if (!c || !c[1]) continue;
-
-          const execName = getCellValue(c[1]).trim();
-          if (!execName || execName === "Executive Name" || execName === "0" || execName === "1" || execName.length < 2) continue;
-
-          const date = getCellValue(c[0]) || "--";
-          const loginTime = getCellValue(c[2]) || "--";
-          const totalLogin = getCellValue(c[3]) || "--";
-          const totalBreak = getCellValue(c[4]) || "--";
-          const netLogin = getCellValue(c[5]) || "00:00:00";
-
-          const profile = fboMap[execName.toLowerCase()] || { mentor: "--", workingType: "Full-Time" };
-          const isPt = profile.workingType.toLowerCase().includes("part");
-
-          const netSec = timeToSeconds(netLogin);
-          const targetSec = isPt ? (4 * 3600) : (7 * 3600);
-          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
-          const badge = resolveStatus(netSec, isPt);
-
-          list.push({
-            date,
-            name: execName,
-            loginTime,
-            totalLogin,
-            totalBreak,
-            netLogin,
-            mentor: profile.mentor,
-            workingType: isPt ? "Part-Time" : "Full-Time",
-            badge,
-            progressPct
-          });
-        }
-
-        workforceDataset = list;
-        const syncTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        document.getElementById('syncStatus').innerText = `Synced at ${syncTime}`;
-
-        const container = document.getElementById('portalContainer');
-        if (list.length === 0) {
-          document.getElementById('kpiBar').style.display = 'none';
-          container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
-          return;
-        }
-
-        if (list[0].date && list[0].date !== "--") {
-          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${list[0].date}`;
-        }
-
-        updateKpis(list);
-        renderCards(list);
-
       } catch (err) {
-        document.getElementById('syncStatus').innerText = "Sync failed";
-        console.error(err);
+        console.error("Snapshot capture failed:", err);
+      } finally {
+        btn.disabled = false;
       }
     }
 
-    function resolveBadgeClass(badge) {
-      if (!badge) return 'badge-progress';
-      const b = badge.toLowerCase();
-      if (b.includes("exceeded") || b.includes("excellent")) return 'badge-excellent';
-      if (b.includes("met") || b.includes("full day")) return 'badge-fullday';
-      if (b.includes("half day")) return 'badge-halfday';
-      if (b.includes("pending")) return 'badge-pending';
-      if (b.includes("not met") || b.includes("absent")) return 'badge-absent';
-      return 'badge-progress';
-    }
-
-    function getInitials(name) {
-      if (!name) return 'EX';
-      const parts = name.trim().split(' ');
-      return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
-    }
-
-    function updateKpis(data) {
-      document.getElementById('kpiBar').style.display = 'grid';
-      document.getElementById('kpiTotal').innerText = data.length;
-      const completed = data.filter(d => (d.badge || '').includes('Met') || (d.badge || '').includes('Exceeded') || (d.badge || '').includes('Excellent')).length;
-      document.getElementById('kpiCompleted').innerText = completed;
-      document.getElementById('kpiInProgress').innerText = data.length - completed;
-    }
-
-    function renderCards(dataList) {
-      const container = document.getElementById('portalContainer');
-      container.innerHTML = '';
-
-      dataList.forEach(item => {
-        const badgeClass = resolveBadgeClass(item.badge);
-        const initials = getInitials(item.name);
-        const isPt = item.workingType === "Part-Time";
-
-        const card = document.createElement('div');
-        card.className = 'agent-card';
-        card.innerHTML = `
-          <div class="card-header">
-            <div class="executive-info">
-              <div class="avatar-badge">${initials}</div>
-              <div>
-                <div class="executive-name">${item.name}</div>
-                <div class="meta-tags">
-                  <span class="tag-type ${isPt ? 'tag-pt' : 'tag-ft'}">${item.workingType}</span>
-                  <span class="tag-mentor">• ${item.mentor || 'Direct'}</span>
-                </div>
-              </div>
-            </div>
-            <div class="badge ${badgeClass}">${item.badge}</div>
-          </div>
-          
-          <div class="metrics-container">
-            <div class="sub-metrics-grid">
-              <div class="metric-row">
-                <span class="metric-title">Login</span>
-                <span class="metric-data">${item.loginTime}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-title">Gross</span>
-                <span class="metric-data">${item.totalLogin}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-title">Break</span>
-                <span class="metric-data">${item.totalBreak}</span>
-              </div>
-            </div>
-            
-            <div class="hero-net-metric">
-              <span class="hero-label">Net Production</span>
-              <span class="hero-value">${item.netLogin}</span>
-            </div>
-          </div>
-
-          <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width: ${item.progressPct}%;"></div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function filterPortalData() {
-      const q = document.getElementById('searchInput').value.toLowerCase().trim();
-      const filtered = workforceDataset.filter(item => 
-        item.name.toLowerCase().includes(q) || 
-        (item.mentor && item.mentor.toLowerCase().includes(q))
-      );
-      renderCards(filtered);
-    }
-
-    window.onload = fetchLiveTelemetry;
-    setInterval(fetchLiveTelemetry, 30000);
+    // Initial Bootstrap and Background Polling Setup
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      fetchTelemetry();
+      setInterval(() => fetchTelemetry(false), REFRESH_INTERVAL_MS);
+    });
   </script>
 </body>
 </html>
