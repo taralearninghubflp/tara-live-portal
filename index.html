@@ -299,41 +299,21 @@
       });
     }
 
-    function parseCSV(text) {
-      const rows = [];
-      let row = [];
-      let inQuotes = false;
-      let currentField = '';
+    function fetchGVizClean(gid) {
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}&_=${Date.now()}`;
+      return fetch(url)
+        .then(r => r.text())
+        .then(text => {
+          const start = text.indexOf('{');
+          const end = text.lastIndexOf('}');
+          if (start === -1 || end === -1) return null;
+          return JSON.parse(text.substring(start, end + 1));
+        });
+    }
 
-      for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const nextChar = text[i + 1];
-
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            currentField += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === ',' && !inQuotes) {
-          row.push(currentField.trim());
-          currentField = '';
-        } else if ((char === '\r' || char === '\n') && !inQuotes) {
-          if (char === '\r' && nextChar === '\n') i++;
-          row.push(currentField.trim());
-          if (row.length > 0 && row.some(cell => cell !== '')) rows.push(row);
-          row = [];
-          currentField = '';
-        } else {
-          currentField += char;
-        }
-      }
-      if (currentField || row.length > 0) {
-        row.push(currentField.trim());
-        if (row.some(cell => cell !== '')) rows.push(row);
-      }
-      return rows;
+    function getCellValue(cell) {
+      if (!cell) return "";
+      return cell.f ? cell.f : (cell.v !== null && cell.v !== undefined ? cell.v.toString() : "");
     }
 
     function timeToSeconds(timeStr) {
@@ -365,45 +345,50 @@
 
     async function fetchLiveTelemetry() {
       document.getElementById('syncStatus').innerText = "Syncing live...";
-      const cacheBust = Date.now();
 
       try {
-        const [loginCsvText, fboCsvText] = await Promise.all([
-          fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_LOGIN}&_=${cacheBust}`).then(r => r.text()),
-          fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_FBO}&_=${cacheBust}`).then(r => r.text()).catch(() => "")
+        const [loginJson, fboJson] = await Promise.all([
+          fetchGVizClean(GID_LOGIN),
+          fetchGVizClean(GID_FBO).catch(() => null)
         ]);
+
+        if (!loginJson || !loginJson.table || !loginJson.table.rows) {
+          throw new Error("Invalid sheet response");
+        }
 
         // 1. Build FBO Map
         const fboMap = {};
-        if (fboCsvText) {
-          const fboRows = parseCSV(fboCsvText);
-          for (let i = 1; i < fboRows.length; i++) {
-            const r = fboRows[i];
-            const name = (r[0] || "").toLowerCase().trim();
-            if (name) {
-              fboMap[name] = {
-                mentor: r[3] || "--",
-                workingType: r[4] || "Full-Time"
-              };
+        if (fboJson && fboJson.table && fboJson.table.rows) {
+          fboJson.table.rows.forEach(r => {
+            const c = r.c;
+            if (c && c[0]) {
+              const name = getCellValue(c[0]).trim().toLowerCase();
+              if (name) {
+                fboMap[name] = {
+                  mentor: getCellValue(c[3]) || "--",
+                  workingType: getCellValue(c[4]) || "Full-Time"
+                };
+              }
             }
-          }
+          });
         }
 
-        // 2. Parse Login Rows
-        const loginRows = parseCSV(loginCsvText);
+        // 2. Build Login List (Sheet rows start after headers)
+        const rows = loginJson.table.rows;
         const list = [];
 
-        for (let i = 0; i < loginRows.length; i++) {
-          const r = loginRows[i];
-          const execName = (r[1] || "").trim();
-          
-          if (!execName || execName === "Executive Name" || execName === "0" || execName === "1" || r.length < 2) continue;
+        for (let i = 0; i < rows.length; i++) {
+          const c = rows[i].c;
+          if (!c || !c[1]) continue;
 
-          const date = r[0] || "--";
-          const loginTime = r[2] || "--";
-          const totalLogin = r[3] || "--";
-          const totalBreak = r[4] || "--";
-          const netLogin = r[5] || "00:00:00";
+          const execName = getCellValue(c[1]).trim();
+          if (!execName || execName === "Executive Name" || execName === "0" || execName === "1" || execName.length < 2) continue;
+
+          const date = getCellValue(c[0]) || "--";
+          const loginTime = getCellValue(c[2]) || "--";
+          const totalLogin = getCellValue(c[3]) || "--";
+          const totalBreak = getCellValue(c[4]) || "--";
+          const netLogin = getCellValue(c[5]) || "00:00:00";
 
           const profile = fboMap[execName.toLowerCase()] || { mentor: "--", workingType: "Full-Time" };
           const isPt = profile.workingType.toLowerCase().includes("part");
