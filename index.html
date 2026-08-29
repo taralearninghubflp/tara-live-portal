@@ -258,7 +258,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="triggerMobileSync()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="performSync()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -266,7 +266,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Connecting stream...</span>
+        <span class="sync-timestamp" id="syncStatus">Syncing stream...</span>
       </div>
     </header>
 
@@ -302,8 +302,8 @@
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
     let workforceDataset = [];
-    let activeScript = null;
-    let syncTimeout = null;
+    let isRequestActive = false;
+    let requestCount = 0;
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -333,22 +333,20 @@
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
-    // Global Receiver for JSONP
+    // Single Consistent Receiver
     window.handleTelemetryResponse = function(response) {
-      if (syncTimeout) clearTimeout(syncTimeout);
-      if (activeScript && activeScript.parentNode) {
-        activeScript.parentNode.removeChild(activeScript);
-        activeScript = null;
-      }
+      isRequestActive = false;
 
       if (!response || !response.data) {
-        document.getElementById('syncStatus').innerText = "Empty Data";
+        document.getElementById('syncStatus').innerText = "Empty Data Received";
         return;
       }
 
       workforceDataset = response.data;
-      document.getElementById('syncStatus').innerText = `Synced at ${response.updated}`;
-      if (response.shiftDate) {
+      const timeStr = response.updated || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      document.getElementById('syncStatus').innerText = `Synced at ${timeStr}`;
+
+      if (response.shiftDate && response.shiftDate !== "--") {
         document.getElementById('sessionDateLabel').innerText = `Shift Date: ${response.shiftDate}`;
       }
 
@@ -436,37 +434,43 @@
       renderCards(filtered);
     }
 
-    // Pure Mobile-Safe JSONP Protocol
-    function triggerMobileSync() {
+    // High-Stability Mobile JSONP Pipeline
+    function performSync() {
+      if (isRequestActive) return;
+      isRequestActive = true;
+      requestCount++;
+
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      if (activeScript && activeScript.parentNode) {
-        activeScript.parentNode.removeChild(activeScript);
-      }
+      // Clean up previous dynamic scripts
+      const old = document.querySelectorAll('.dynamic-telemetry-tag');
+      old.forEach(el => el.remove());
 
       const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = true;
-      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_ts=${Date.now()}`;
+      script.className = 'dynamic-telemetry-tag';
+      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_req=${requestCount}_${Date.now()}`;
       
       script.onerror = function() {
-        document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
+        isRequestActive = false;
+        if (workforceDataset.length > 0) {
+          // If previous data exists, keep UI and show status
+          document.getElementById('syncStatus').innerText = "Syncing in background...";
+        } else {
+          document.getElementById('syncStatus').innerText = "Connecting...";
+        }
       };
 
-      activeScript = script;
-      document.head.appendChild(script);
+      document.body.appendChild(script);
 
-      // Auto fallback if network hangs on mobile
-      syncTimeout = setTimeout(() => {
-        if (document.getElementById('syncStatus').innerText === "Syncing...") {
-          document.getElementById('syncStatus').innerText = "Reconnecting...";
-        }
-      }, 10000);
+      // Auto-unlock lock after 8 seconds
+      setTimeout(() => {
+        isRequestActive = false;
+      }, 8000);
     }
 
     window.onload = () => {
-      triggerMobileSync();
-      setInterval(triggerMobileSync, 30000);
+      performSync();
+      setInterval(performSync, 20000);
     };
   </script>
 </body>
