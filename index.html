@@ -233,7 +233,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn">☀️</button>
           <button class="btn-action" onclick="captureScreen()">📸 Save</button>
-          <button class="btn-action" onclick="fetchLiveTelemetry()">↻ Sync</button>
+          <button class="btn-action" onclick="manualSync()">↻ Sync</button>
         </div>
       </div>
 
@@ -241,7 +241,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Connecting live...</span>
+        <span class="sync-timestamp" id="syncStatus">Live Connected</span>
       </div>
     </header>
 
@@ -266,7 +266,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Connecting live workforce telemetry feed...</div>
+      <div class="state-message">Loading live workforce telemetry...</div>
     </main>
 
     <footer class="app-footer">
@@ -277,6 +277,8 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxm_hpDLvkFlIR8UQzTGxCe62-vjt_poyVQDieMLwn7jx5kR5EPDroIHOPwWuffFRYDNg/exec";
     let workforceDataset = [];
+    let isFetching = false;
+    let syncTimeout = null;
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -300,27 +302,38 @@
       });
     }
 
-    // Dynamic Anti-Cache Injection Engine
+    function manualSync() {
+      document.getElementById('syncStatus').innerText = "Syncing live...";
+      fetchLiveTelemetry();
+    }
+
     function fetchLiveTelemetry() {
-      document.getElementById('syncStatus').innerText = "Syncing...";
-      
+      if (isFetching) return;
+      isFetching = true;
+
       const oldScript = document.getElementById('jsonpFeedScript');
       if (oldScript) oldScript.remove();
 
-      const uniqueToken = Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+      const uniqueToken = Date.now();
       const script = document.createElement('script');
       script.id = 'jsonpFeedScript';
-      script.src = `${API_URL}?callback=renderTelemetryFeed&nocache=${uniqueToken}`;
-      
-      script.onerror = function() {
-        document.getElementById('syncStatus').innerText = "Reconnecting...";
-        setTimeout(fetchLiveTelemetry, 4000);
-      };
+      script.src = `${API_URL}?callback=renderTelemetryFeed&_=${uniqueToken}`;
+
+      // 10-second fail-safe watchdog
+      clearTimeout(syncTimeout);
+      syncTimeout = setTimeout(() => {
+        if (isFetching) {
+          isFetching = false;
+        }
+      }, 10000);
 
       document.body.appendChild(script);
     }
 
     window.renderTelemetryFeed = function(response) {
+      isFetching = false;
+      clearTimeout(syncTimeout);
+
       workforceDataset = response.data || [];
       const updatedTime = response.updated || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
       document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
@@ -430,8 +443,9 @@
       renderCards(filtered);
     }
 
+    // Auto load on open & smooth polling every 30s
     window.onload = fetchLiveTelemetry;
-    setInterval(fetchLiveTelemetry, 60000);
+    setInterval(fetchLiveTelemetry, 30000);
   </script>
 </body>
 </html>
