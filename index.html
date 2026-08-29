@@ -11,7 +11,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
@@ -20,7 +20,6 @@
       --surface: #0f172a;
       --surface-sub: #1e293b;
       --border: rgba(255, 255, 255, 0.08);
-      --border-light: rgba(255, 255, 255, 0.15);
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --accent: #3b82f6;
@@ -36,7 +35,6 @@
       --surface: #ffffff;
       --surface-sub: #f8fafc;
       --border: #e2e8f0;
-      --border-light: #cbd5e1;
       --text: #0f172a;
       --text-muted: #64748b;
       --accent: #2563eb;
@@ -159,7 +157,7 @@
 
     .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
-    .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
+    .kpi-value { font-size: 18px; font-weight: 800; color: var(--text); font-family: 'JetBrains Mono', monospace; }
     .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 
     .agent-card {
@@ -174,8 +172,8 @@
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
     .executive-info { display: flex; align-items: center; gap: 10px; }
     .avatar-badge {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       background: var(--surface-sub);
       color: var(--accent);
       font-weight: 800;
@@ -217,7 +215,7 @@
       font-size: 11px;
     }
     .metric-title { color: var(--text-muted); font-weight: 500; }
-    .metric-data { font-weight: 700; color: var(--text); font-feature-settings: "tnum"; }
+    .metric-data { font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
 
     .hero-net-metric {
       background: var(--hero-bg);
@@ -231,10 +229,10 @@
       text-align: center;
     }
     .hero-label { font-size: 9px; font-weight: 800; color: var(--hero-label); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-    .hero-value { font-size: 18px; font-weight: 800; color: var(--hero-value); font-feature-settings: "tnum"; }
+    .hero-value { font-size: 18px; font-weight: 800; color: var(--hero-value); font-family: 'JetBrains Mono', monospace; }
 
-    .progress-bar-wrap { background: var(--surface-sub); height: 5px; border-radius: 99px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: #10b981; border-radius: 99px; }
+    .progress-bar-wrap { background: var(--surface-sub); height: 6px; border-radius: 99px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; transition: width 0.4s ease; }
 
     .app-footer {
       text-align: center;
@@ -260,7 +258,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="fetchPortalData()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="fetchLiveTelemetry()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -274,7 +272,7 @@
 
     <div class="search-wrapper">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" class="search-input" placeholder="Search by executive or mentor..." onkeyup="filterPortalData()">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search by executive or mentor..." oninput="filterPortalData()">
     </div>
 
     <div class="kpi-row" id="kpiBar" style="display: none;">
@@ -302,7 +300,10 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxm_hpDLvkFlIR8UQzTGxCe62-vjt_poyVQDieMLwn7jx5kR5EPDroIHOPwWuffFRYDNg/exec";
+    const SPREADSHEET_ID = "1jxkUaREVII_2SeRCG076fv__ONKs6AQHMMg8OGc9pvs";
+    const GID_LOGINS = "461503710";
+    const GID_DIRECTORY = "1318792633";
+
     let workforceDataset = [];
 
     function toggleTheme() {
@@ -327,61 +328,176 @@
       });
     }
 
-    function resolveBadgeClass(badge) {
-      if (!badge) return 'badge-progress';
-      const b = badge.toLowerCase();
-      if (b.includes("exceeded") || b.includes("excellent")) return 'badge-excellent';
-      if (b.includes("met") || b.includes("full day")) return 'badge-fullday';
-      if (b.includes("half day")) return 'badge-halfday';
-      if (b.includes("pending")) return 'badge-pending';
-      if (b.includes("not met") || b.includes("absent")) return 'badge-absent';
-      return 'badge-progress';
+    function parseCSV(text) {
+      const rows = [];
+      let row = [''];
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i + 1];
+        if (c === '"') {
+          if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (c === ',' && !inQuotes) {
+          row.push('');
+        } else if ((c === '\r' || c === '\n') && !inQuotes) {
+          if (c === '\r' && next === '\n') { i++; }
+          rows.push(row);
+          row = [''];
+        } else {
+          row[row.length - 1] += c;
+        }
+      }
+      if (row.length > 1 || row[0] !== '') rows.push(row);
+      return rows;
+    }
+
+    function timeToSeconds(timeStr) {
+      if (!timeStr || typeof timeStr !== 'string') return 0;
+      const parts = timeStr.trim().split(':');
+      if (parts.length < 2) return 0;
+      return ((parseInt(parts[0], 10) || 0) * 3600) + 
+             ((parseInt(parts[1], 10) || 0) * 60) + 
+             ((parseInt(parts[2], 10) || 0));
+    }
+
+    function resolveStatus(netSec, isPartTime) {
+      const hours = netSec / 3600;
+      const now = new Date();
+      const currentHourDecimal = now.getHours() + (now.getMinutes() / 60);
+
+      if (isPartTime) {
+        if (hours >= 4.5) return { badge: "⭐ Target Exceeded", class: "badge-excellent", isMet: true };
+        if (hours >= 4.0) return { badge: "✅ Part-Time Met", class: "badge-fullday", isMet: true };
+        if (currentHourDecimal < 20.5) return { badge: "⏳ In Progress", class: "badge-progress" };
+        if (currentHourDecimal < 22.0) return { badge: "⚠️ Pending Hours", class: "badge-pending" };
+        return { badge: "❌ Target Not Met", class: "badge-absent" };
+      } else {
+        if (hours >= 8.0) return { badge: "⭐ Excellent Performance", class: "badge-excellent", isMet: true };
+        if (hours >= 7.0) return { badge: "✅ Full Day Met", class: "badge-fullday", isMet: true };
+        if (hours >= 4.0) return { badge: "⚠️ Half Day Recorded", class: "badge-halfday" };
+        if (currentHourDecimal < 20.5) return { badge: "⏳ In Progress", class: "badge-progress" };
+        if (currentHourDecimal < 22.0) return { badge: "⚠️ Pending Target", class: "badge-pending" };
+        return { badge: "❌ Target Not Met", class: "badge-absent" };
+      }
     }
 
     function getInitials(name) {
       if (!name) return 'EX';
-      const parts = name.trim().split(' ');
+      const parts = name.trim().split(' ').filter(Boolean);
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
-    function updateKpis(data) {
-      document.getElementById('kpiBar').style.display = 'grid';
-      document.getElementById('kpiTotal').innerText = data.length;
-      const completed = data.filter(d => (d.badge || '').includes('Met') || (d.badge || '').includes('Exceeded') || (d.badge || '').includes('Excellent')).length;
-      document.getElementById('kpiCompleted').innerText = completed;
-      document.getElementById('kpiInProgress').innerText = data.length - completed;
+    async function fetchLiveTelemetry() {
+      document.getElementById('syncStatus').innerText = "Syncing...";
+      try {
+        const timestamp = Date.now();
+        const dirUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_DIRECTORY}&_=${timestamp}`;
+        const loginUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_LOGINS}&_=${timestamp}`;
+
+        const [dirRes, loginRes] = await Promise.all([
+          fetch(dirUrl, { cache: "no-store" }),
+          fetch(loginUrl, { cache: "no-store" })
+        ]);
+
+        if (!dirRes.ok || !loginRes.ok) throw new Error("Network response error");
+
+        const [dirText, loginText] = await Promise.all([dirRes.text(), loginRes.text()]);
+
+        // Process FBO Directory Map
+        const dirRows = parseCSV(dirText);
+        const fboMap = new Map();
+        for (let i = 1; i < dirRows.length; i++) {
+          const row = dirRows[i];
+          if (row[0] && row[0].trim()) {
+            fboMap.set(row[0].trim().toLowerCase(), {
+              mentor: row[3] ? row[3].trim() : 'Executive Office',
+              workingType: (row[4] && row[4].trim()) ? row[4].trim() : 'Full-Time'
+            });
+          }
+        }
+
+        // Process Filter Formula Rows from Row 5 (index 4)
+        const loginRows = parseCSV(loginText);
+        const list = [];
+        let detectedDate = "";
+
+        for (let i = 4; i < loginRows.length; i++) {
+          const row = loginRows[i];
+          if (!row || !row[1]) continue;
+          
+          const execName = row[1].trim();
+          if (!execName || execName === "0" || execName === "1" || execName === "Executive Name" || execName.length < 2) continue;
+
+          if (!detectedDate && row[0] && row[0].trim()) {
+            detectedDate = row[0].trim();
+          }
+
+          const profile = fboMap.get(execName.toLowerCase()) || { mentor: "Executive Office", workingType: "Full-Time" };
+          const isPartTime = profile.workingType.toLowerCase().includes("part");
+          
+          const netLogin = row[5] ? row[5].trim() : "00:00:00";
+          const netSec = timeToSeconds(netLogin);
+          const targetSec = isPartTime ? 14400 : 25200;
+          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
+          const status = resolveStatus(netSec, isPartTime);
+
+          list.push({
+            date: row[0] ? row[0].trim() : "--",
+            name: execName,
+            mentor: profile.mentor,
+            workingType: isPartTime ? "Part-Time" : "Full-Time",
+            loginTime: row[2] ? row[2].trim() : "--",
+            totalLogin: row[3] ? row[3].trim() : "--",
+            totalBreak: row[4] ? row[4].trim() : "--",
+            netLogin: netLogin,
+            badge: status.badge,
+            badgeClass: status.class,
+            isMet: status.isMet,
+            progressPct: progressPct
+          });
+        }
+
+        workforceDataset = list;
+
+        const updatedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
+        if (detectedDate) {
+          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${detectedDate}`;
+        }
+
+        updateDashboard(workforceDataset);
+      } catch (err) {
+        console.error("Fetch failed:", err);
+        document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
+      }
     }
 
-    // JSONP Global Callback Receiver
-    window.renderPortalView = function(response) {
-      workforceDataset = response.data || [];
-      const updatedTime = response.updated || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
-      
+    function updateDashboard(data) {
       const container = document.getElementById('portalContainer');
-      if (workforceDataset.length === 0) {
+      if (!data || data.length === 0) {
         document.getElementById('kpiBar').style.display = 'none';
         container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
         return;
       }
-      
-      if (workforceDataset[0] && workforceDataset[0].date && workforceDataset[0].date !== "--") {
-        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${workforceDataset[0].date}`;
-      }
-      
-      updateKpis(workforceDataset);
-      renderCards(workforceDataset);
-    };
+
+      document.getElementById('kpiBar').style.display = 'grid';
+      document.getElementById('kpiTotal').innerText = data.length;
+      const completed = data.filter(d => d.isMet).length;
+      document.getElementById('kpiCompleted').innerText = completed;
+      document.getElementById('kpiInProgress').innerText = data.length - completed;
+
+      renderCards(data);
+    }
 
     function renderCards(dataList) {
       const container = document.getElementById('portalContainer');
       container.innerHTML = '';
 
       dataList.forEach(item => {
-        const badgeClass = resolveBadgeClass(item.badge);
         const initials = getInitials(item.name);
         const isPt = item.workingType === "Part-Time";
-        
+
         const card = document.createElement('div');
         card.className = 'agent-card';
         card.innerHTML = `
@@ -392,11 +508,11 @@
                 <div class="executive-name">${item.name}</div>
                 <div class="meta-tags">
                   <span class="tag-type ${isPt ? 'tag-pt' : 'tag-ft'}">${item.workingType}</span>
-                  <span class="tag-mentor">• ${item.mentor || 'Direct'}</span>
+                  <span class="tag-mentor">• ${item.mentor}</span>
                 </div>
               </div>
             </div>
-            <div class="badge ${badgeClass}">${item.badge}</div>
+            <div class="badge ${item.badgeClass}">${item.badge}</div>
           </div>
           
           <div class="metrics-container">
@@ -438,24 +554,10 @@
       renderCards(filtered);
     }
 
-    // CORS-proof JSONP fetch for GitHub Pages
-    function fetchPortalData() {
-      document.getElementById('syncStatus').innerText = "Syncing...";
-      
-      const oldScript = document.getElementById('jsonp-telemetry');
-      if (oldScript) oldScript.remove();
-
-      const script = document.createElement('script');
-      script.id = 'jsonp-telemetry';
-      script.src = `${SCRIPT_URL}?callback=renderPortalView&_=${Date.now()}`;
-      script.onerror = function() {
-        document.getElementById('syncStatus').innerText = "Retrying connection...";
-      };
-      document.body.appendChild(script);
-    }
-
-    setInterval(fetchPortalData, 35000);
-    window.onload = fetchPortalData;
+    window.onload = () => {
+      fetchLiveTelemetry();
+      setInterval(fetchLiveTelemetry, 30000);
+    };
   </script>
 </body>
 </html>
