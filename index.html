@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Today's Live Login Dashboard</title>
 
-  <!-- Strict Anti-Caching Headers -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="-1">
@@ -259,7 +258,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="executeSync(true)" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="requestTelemetrySync()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -267,7 +266,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Connecting stream...</span>
+        <span class="sync-timestamp" id="syncStatus">Live</span>
       </div>
     </header>
 
@@ -302,6 +301,8 @@
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
+    const CACHE_KEY = "tara_live_telemetry_cache";
+
     let workforceDataset = [];
     let isRequestActive = false;
 
@@ -331,6 +332,24 @@
       if (!name) return 'EX';
       const parts = name.trim().split(' ').filter(Boolean);
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
+    }
+
+    // Instant Hydration from Local Storage on Mobile Pull-to-Refresh
+    function loadCachedState() {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.data && parsed.data.length > 0) {
+            workforceDataset = parsed.data;
+            if (parsed.shiftDate) document.getElementById('sessionDateLabel').innerText = `Shift Date: ${parsed.shiftDate}`;
+            document.getElementById('syncStatus').innerText = `Synced at ${parsed.updated || 'Recent'}`;
+            updateDashboard(workforceDataset);
+          }
+        }
+      } catch (e) {
+        console.warn("Cache load bypassed", e);
+      }
     }
 
     function updateDashboard(data) {
@@ -414,81 +433,82 @@
       renderCards(filtered);
     }
 
-    // Dynamic Anti-Lock JSONP Sync Engine
-    function executeSync(isManual = false) {
-      if (isRequestActive && !isManual) return;
+    // Bulletproof Nonce-Based Sync
+    function requestTelemetrySync() {
+      if (isRequestActive) return;
       isRequestActive = true;
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      const nonce = Date.now();
-      const callbackName = `cb_${nonce}_${Math.floor(Math.random() * 1000)}`;
+      const nonce = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      const cbName = `tara_cb_${nonce}`;
 
-      let isFinished = false;
+      let completed = false;
 
-      // Timeout Guardian to prevent permanent UI lock
-      const timeoutId = setTimeout(() => {
-        if (!isFinished) {
-          isFinished = true;
+      const timer = setTimeout(() => {
+        if (!completed) {
+          completed = true;
           isRequestActive = false;
-          delete window[callbackName];
-          const staleScript = document.getElementById(callbackName);
-          if (staleScript) staleScript.remove();
-          if (workforceDataset.length === 0) {
-            document.getElementById('syncStatus').innerText = "Retrying...";
+          try { delete window[cbName]; } catch(e){}
+          const s = document.getElementById(cbName);
+          if (s) s.remove();
+          if (workforceDataset.length > 0) {
+            document.getElementById('syncStatus').innerText = "Live";
           }
         }
-      }, 8000);
+      }, 7000);
 
-      // Unique Dynamic Global Callback
-      window[callbackName] = function(response) {
-        if (isFinished) return;
-        isFinished = true;
-        clearTimeout(timeoutId);
+      window[cbName] = function(payload) {
+        if (completed) return;
+        completed = true;
+        clearTimeout(timer);
         isRequestActive = false;
 
-        delete window[callbackName];
-        const staleScript = document.getElementById(callbackName);
-        if (staleScript) staleScript.remove();
+        try { delete window[cbName]; } catch(e){}
+        const s = document.getElementById(cbName);
+        if (s) s.remove();
 
-        if (!response || !response.data) {
-          document.getElementById('syncStatus').innerText = "Empty Data";
-          return;
+        if (payload && payload.data) {
+          workforceDataset = payload.data;
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(payload)); } catch (e) {}
+          
+          document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
+          if (payload.shiftDate) {
+            document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
+          }
+          updateDashboard(workforceDataset);
         }
-
-        workforceDataset = response.data;
-        document.getElementById('syncStatus').innerText = `Synced at ${response.updated}`;
-        if (response.shiftDate) {
-          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${response.shiftDate}`;
-        }
-
-        updateDashboard(workforceDataset);
       };
 
-      // Script injection without browser cache locking
       const script = document.createElement('script');
-      script.id = callbackName;
+      script.id = cbName;
       script.type = 'text/javascript';
       script.async = true;
-      script.src = `${WEB_APP_URL}?callback=${callbackName}&_nocache=${nonce}`;
+      script.src = `${WEB_APP_URL}?callback=${cbName}&_t=${nonce}`;
 
       script.onerror = function() {
-        if (!isFinished) {
-          isFinished = true;
-          clearTimeout(timeoutId);
+        if (!completed) {
+          completed = true;
+          clearTimeout(timer);
           isRequestActive = false;
-          delete window[callbackName];
+          try { delete window[cbName]; } catch(e){}
           script.remove();
-          document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
+          if (workforceDataset.length > 0) {
+            document.getElementById('syncStatus').innerText = "Live (Cached)";
+          } else {
+            document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
+          }
         }
       };
 
       document.body.appendChild(script);
     }
 
-    window.onload = () => {
-      executeSync(true);
-      setInterval(() => executeSync(false), 60000); // 1 Minute Sync Loop
-    };
+    // Initialize and Auto-sync every 60 seconds
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCachedState();
+      requestTelemetrySync();
+      setInterval(requestTelemetrySync, 60000);
+    });
   </script>
 </body>
 </html>
