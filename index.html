@@ -2,6 +2,9 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Today's Live Login | TARA Talent Solutions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,6 +47,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 580px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
 
+    /* Bold Executive Header */
     .master-header {
       background: var(--header-bg);
       border-radius: 18px;
@@ -55,6 +59,7 @@
     }
 
     .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    
     .live-badge {
       display: inline-flex;
       align-items: center;
@@ -67,6 +72,7 @@
       letter-spacing: 0.05em;
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
+
     .pulse-dot {
       width: 8px;
       height: 8px;
@@ -75,6 +81,7 @@
       box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
       animation: pulse 1.8s infinite;
     }
+
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
       70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
@@ -119,6 +126,7 @@
     .shift-tag { color: #93c5fd; }
     .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
 
+    /* Search & Filter Bar */
     .search-wrapper { position: relative; margin-bottom: 12px; }
     .search-input {
       width: 100%;
@@ -132,11 +140,13 @@
     }
     .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
 
+    /* KPI Summary Row */
     .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
     .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
     .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 
+    /* Agent Cards */
     .agent-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -231,7 +241,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Syncing...</span>
+        <span class="sync-timestamp" id="syncStatus">Connecting live...</span>
       </div>
     </header>
 
@@ -293,7 +303,6 @@
     function fetchLiveTelemetry() {
       document.getElementById('syncStatus').innerText = "Syncing...";
       
-      // JSONP Direct Script Injection to completely bypass Browser CORS
       const oldScript = document.getElementById('jsonpFeedScript');
       if (oldScript) oldScript.remove();
 
@@ -416,7 +425,6 @@
       renderCards(filtered);
     }
 
-    // Auto-fetch on page load & every 60s
     window.onload = fetchLiveTelemetry;
     setInterval(fetchLiveTelemetry, 60000);
   </script>
