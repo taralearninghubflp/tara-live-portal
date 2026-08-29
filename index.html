@@ -7,8 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <!-- Google Official Charts API for Failproof Sheet Connection -->
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
@@ -46,7 +44,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 580px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
 
-    /* Master Header */
     .master-header {
       background: var(--header-bg);
       border-radius: 18px;
@@ -122,7 +119,6 @@
     .shift-tag { color: #93c5fd; }
     .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
 
-    /* Search & Filter Bar */
     .search-wrapper { position: relative; margin-bottom: 12px; }
     .search-input {
       width: 100%;
@@ -136,13 +132,11 @@
     }
     .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
 
-    /* Summary Bar */
     .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
     .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
     .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 
-    /* Cards */
     .agent-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -229,7 +223,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn">☀️</button>
           <button class="btn-action" onclick="captureScreen()">📸 Save</button>
-          <button class="btn-action" onclick="fetchAllData()">↻ Sync</button>
+          <button class="btn-action" onclick="fetchLiveTelemetry()">↻ Sync</button>
         </div>
       </div>
 
@@ -237,7 +231,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Connecting live...</span>
+        <span class="sync-timestamp" id="syncStatus">Syncing...</span>
       </div>
     </header>
 
@@ -262,7 +256,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Initializing live Google sheet connection...</div>
+      <div class="state-message">Connecting live workforce telemetry feed...</div>
     </main>
 
     <footer class="app-footer">
@@ -271,16 +265,8 @@
   </div>
 
   <script>
-    const SPREADSHEET_ID = "1jxkUaREVII_2SeRCG076fv__ONKs6AQHMMg8OGc9pvs";
-    const GID_LOGIN = "461503710";
-    const GID_FBO = "1318792633";
-
+    const API_URL = "https://script.google.com/macros/s/AKfycbxm_hpDLvkFlIR8UQzTGxCe62-vjt_poyVQDieMLwn7jx5kR5EPDroIHOPwWuffFRYDNg/exec";
     let workforceDataset = [];
-    let fboProfilesMap = {};
-
-    // Initialize official Google Charts loader
-    google.charts.load('current', { packages: ['corechart'] });
-    google.charts.setOnLoadCallback(fetchAllData);
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -304,129 +290,41 @@
       });
     }
 
-    function querySheet(gid) {
-      return new Promise((resolve, reject) => {
-        const queryUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${gid}&headers=0`;
-        const query = new google.visualization.Query(queryUrl);
-        query.send(response => {
-          if (response.isError()) {
-            reject(response.getMessage() + ' ' + response.getDetailedMessage());
-          } else {
-            resolve(response.getDataTable());
-          }
-        });
-      });
-    }
-
-    async function fetchAllData() {
+    function fetchLiveTelemetry() {
       document.getElementById('syncStatus').innerText = "Syncing...";
-      try {
-        // Query FBO Profile sheet
-        try {
-          const fboTable = await querySheet(GID_FBO);
-          fboProfilesMap = {};
-          const numRows = fboTable.getNumberOfRows();
-          for (let r = 1; r < numRows; r++) {
-            const name = (fboTable.getFormattedValue(r, 0) || fboTable.getValue(r, 0) || "").toString().trim().toLowerCase();
-            if (name) {
-              fboProfilesMap[name] = {
-                mentor: fboTable.getFormattedValue(r, 3) || fboTable.getValue(r, 3) || "--",
-                workingType: fboTable.getFormattedValue(r, 4) || fboTable.getValue(r, 4) || "Full-Time"
-              };
-            }
-          }
-        } catch (e) {
-          console.warn("FBO sheet skipped", e);
-        }
+      
+      // JSONP Direct Script Injection to completely bypass Browser CORS
+      const oldScript = document.getElementById('jsonpFeedScript');
+      if (oldScript) oldScript.remove();
 
-        // Query Login Sheet
-        const loginTable = await querySheet(GID_LOGIN);
-        const rowsCount = loginTable.getNumberOfRows();
-        const list = [];
-
-        for (let r = 0; r < rowsCount; r++) {
-          const execName = (loginTable.getFormattedValue(r, 1) || loginTable.getValue(r, 1) || "").toString().trim();
-          if (!execName || execName === "Executive Name" || execName === "0" || execName === "1") continue;
-
-          const date = loginTable.getFormattedValue(r, 0) || loginTable.getValue(r, 0) || "--";
-          const loginTime = loginTable.getFormattedValue(r, 2) || loginTable.getValue(r, 2) || "--";
-          const totalLogin = loginTable.getFormattedValue(r, 3) || loginTable.getValue(r, 3) || "--";
-          const totalBreak = loginTable.getFormattedValue(r, 4) || loginTable.getValue(r, 4) || "--";
-          const netLogin = (loginTable.getFormattedValue(r, 5) || loginTable.getValue(r, 5) || "00:00:00").toString();
-
-          const profile = fboProfilesMap[execName.toLowerCase()] || { mentor: "--", workingType: "Full-Time" };
-          const isPt = profile.workingType.toLowerCase().includes("part");
-
-          const netSec = timeToSeconds(netLogin);
-          const targetSec = isPt ? (4 * 3600) : (7 * 3600);
-          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
-          const badge = resolveStatus(netSec, isPt);
-
-          list.push({
-            date: date.toString(),
-            name: execName,
-            loginTime: loginTime.toString(),
-            totalLogin: totalLogin.toString(),
-            totalBreak: totalBreak.toString(),
-            netLogin: netLogin,
-            mentor: profile.mentor,
-            workingType: isPt ? "Part-Time" : "Full-Time",
-            badge,
-            progressPct
-          });
-        }
-
-        workforceDataset = list;
-        const syncTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        document.getElementById('syncStatus').innerText = `Synced at ${syncTime}`;
-
-        const container = document.getElementById('portalContainer');
-        if (list.length === 0) {
-          document.getElementById('kpiBar').style.display = 'none';
-          container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
-          return;
-        }
-
-        if (list[0].date && list[0].date !== "--") {
-          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${list[0].date}`;
-        }
-
-        updateKpis(list);
-        renderCards(list);
-
-      } catch (err) {
+      const script = document.createElement('script');
+      script.id = 'jsonpFeedScript';
+      script.src = `${API_URL}?callback=renderTelemetryFeed&_=${Date.now()}`;
+      script.onerror = function() {
         document.getElementById('syncStatus').innerText = "Sync failed";
-        document.getElementById('portalContainer').innerHTML = `<div class="state-message">Connection error. Please check sheet Share permission is set to Anyone with link.</div>`;
-        console.error(err);
+      };
+      document.body.appendChild(script);
+    }
+
+    window.renderTelemetryFeed = function(response) {
+      workforceDataset = response.data || [];
+      const updatedTime = response.updated || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
+
+      const container = document.getElementById('portalContainer');
+      if (workforceDataset.length === 0) {
+        document.getElementById('kpiBar').style.display = 'none';
+        container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
+        return;
       }
-    }
 
-    function timeToSeconds(timeStr) {
-      if (!timeStr || timeStr.indexOf(":") === -1) return 0;
-      const parts = timeStr.split(":");
-      return ((parseInt(parts[0], 10) || 0) * 3600) + ((parseInt(parts[1], 10) || 0) * 60) + (parseInt(parts[2], 10) || 0);
-    }
-
-    function resolveStatus(netSec, isPartTime) {
-      const hours = netSec / 3600;
-      const now = new Date();
-      const curHour = now.getHours() + (now.getMinutes() / 60);
-
-      if (isPartTime) {
-        if (hours >= 4.5) return "⭐ Target Exceeded";
-        if (hours >= 4.0) return "✅ Part-Time Met";
-        if (curHour < 20.5) return "⏳ In Progress";
-        if (curHour < 22.0) return "⚠️ Pending Hours";
-        return "❌ Target Not Met";
-      } else {
-        if (hours >= 8.0) return "⭐ Excellent Performance";
-        if (hours >= 7.0) return "✅ Full Day Met";
-        if (hours >= 4.0) return "⚠️ Half Day Recorded";
-        if (curHour < 20.5) return "⏳ In Progress";
-        if (curHour < 22.0) return "⚠️ Pending Target";
-        return "❌ Target Not Met";
+      if (workforceDataset[0] && workforceDataset[0].date && workforceDataset[0].date !== "--") {
+        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${workforceDataset[0].date}`;
       }
-    }
+
+      updateKpis(workforceDataset);
+      renderCards(workforceDataset);
+    };
 
     function resolveBadgeClass(badge) {
       if (!badge) return 'badge-progress';
@@ -461,7 +359,7 @@
         const badgeClass = resolveBadgeClass(item.badge);
         const initials = getInitials(item.name);
         const isPt = item.workingType === "Part-Time";
-        
+
         const card = document.createElement('div');
         card.className = 'agent-card';
         card.innerHTML = `
@@ -518,8 +416,9 @@
       renderCards(filtered);
     }
 
-    // Auto-refresh every 60s
-    setInterval(fetchAllData, 60000);
+    // Auto-fetch on page load & every 60s
+    window.onload = fetchLiveTelemetry;
+    setInterval(fetchLiveTelemetry, 60000);
   </script>
 </body>
 </html>
