@@ -44,7 +44,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 580px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
 
-    /* Bold High-Impact Master Header */
+    /* Master Header */
     .master-header {
       background: var(--header-bg);
       border-radius: 18px;
@@ -55,13 +55,7 @@
       color: #ffffff;
     }
 
-    .header-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
+    .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .live-badge {
       display: inline-flex;
       align-items: center;
@@ -74,7 +68,6 @@
       letter-spacing: 0.05em;
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
-
     .pulse-dot {
       width: 8px;
       height: 8px;
@@ -83,7 +76,6 @@
       box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
       animation: pulse 1.8s infinite;
     }
-
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
       70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
@@ -128,7 +120,7 @@
     .shift-tag { color: #93c5fd; }
     .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
 
-    /* Search & Filter */
+    /* Search & Filter Bar */
     .search-wrapper { position: relative; margin-bottom: 12px; }
     .search-input {
       width: 100%;
@@ -142,13 +134,13 @@
     }
     .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
 
-    /* Summary KPI Bar */
+    /* KPI Summary Strip */
     .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
     .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
     .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 
-    /* Cards */
+    /* Agent Cards */
     .agent-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -235,7 +227,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn">☀️</button>
           <button class="btn-action" onclick="captureScreen()">📸 Save</button>
-          <button class="btn-action" onclick="loadAllData()">↻ Sync</button>
+          <button class="btn-action" onclick="triggerSync()">↻ Sync</button>
         </div>
       </div>
 
@@ -282,6 +274,7 @@
     const GID_FBO = "1318792633";
 
     let workforceDataset = [];
+    let fboProfilesMap = {};
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -305,14 +298,111 @@
       });
     }
 
-    function fetchGVizData(gid) {
-      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}&t=${Date.now()}`;
-      return fetch(url)
-        .then(res => res.text())
-        .then(text => {
-          const jsonText = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-          return JSON.parse(jsonText);
-        });
+    function loadScript(url) {
+      const s = document.createElement('script');
+      s.src = url;
+      document.body.appendChild(s);
+    }
+
+    function triggerSync() {
+      document.getElementById('syncStatus').innerText = "Syncing...";
+      // 1. Fetch FBO Map first via JSONP
+      const fboUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleFBOResponse&gid=${GID_FBO}&_=${Date.now()}`;
+      loadScript(fboUrl);
+    }
+
+    window.handleFBOResponse = function(res) {
+      try {
+        fboProfilesMap = {};
+        if (res && res.table && res.table.rows) {
+          res.table.rows.forEach(r => {
+            const c = r.c;
+            if (c && c[0]) {
+              const name = getCellValue(c[0]).trim().toLowerCase();
+              if (name) {
+                fboProfilesMap[name] = {
+                  mentor: getCellValue(c[3]) || "--",
+                  workingType: getCellValue(c[4]) || "Full-Time"
+                };
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error("FBO parse error", e);
+      }
+      // 2. Fetch Login Feed via JSONP
+      const loginUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleLoginResponse&gid=${GID_LOGIN}&_=${Date.now()}`;
+      loadScript(loginUrl);
+    };
+
+    window.handleLoginResponse = function(res) {
+      try {
+        const rows = res.table.rows;
+        const list = [];
+
+        for (let i = 0; i < rows.length; i++) {
+          const c = rows[i].c;
+          if (!c || !c[1]) continue;
+
+          const execName = getCellValue(c[1]).trim();
+          if (!execName || execName === "Executive Name" || execName === "0" || execName === "1") continue;
+
+          const date = getCellValue(c[0]) || "--";
+          const loginTime = getCellValue(c[2]) || "--";
+          const totalLogin = getCellValue(c[3]) || "--";
+          const totalBreak = getCellValue(c[4]) || "--";
+          const netLogin = getCellValue(c[5]) || "00:00:00";
+
+          const profile = fboProfilesMap[execName.toLowerCase()] || { mentor: "--", workingType: "Full-Time" };
+          const isPt = profile.workingType.toLowerCase().includes("part");
+
+          const netSec = timeToSeconds(netLogin);
+          const targetSec = isPt ? (4 * 3600) : (7 * 3600);
+          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
+          const badge = resolveStatus(netSec, isPt);
+
+          list.push({
+            date,
+            name: execName,
+            loginTime,
+            totalLogin,
+            totalBreak,
+            netLogin,
+            mentor: profile.mentor,
+            workingType: isPt ? "Part-Time" : "Full-Time",
+            badge,
+            progressPct
+          });
+        }
+
+        workforceDataset = list;
+        const syncTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        document.getElementById('syncStatus').innerText = `Synced at ${syncTime}`;
+
+        const container = document.getElementById('portalContainer');
+        if (list.length === 0) {
+          document.getElementById('kpiBar').style.display = 'none';
+          container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
+          return;
+        }
+
+        if (list[0].date !== "--") {
+          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${list[0].date}`;
+        }
+
+        updateKpis(list);
+        renderCards(list);
+
+      } catch (err) {
+        document.getElementById('syncStatus').innerText = "Sync failed";
+        console.error(err);
+      }
+    };
+
+    function getCellValue(cell) {
+      if (!cell) return "";
+      return cell.f ? cell.f : (cell.v !== null && cell.v !== undefined ? cell.v.toString() : "");
     }
 
     function timeToSeconds(timeStr) {
@@ -357,100 +447,6 @@
       if (!name) return 'EX';
       const parts = name.trim().split(' ');
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
-    }
-
-    function getCellValue(cell) {
-      if (!cell) return "";
-      return cell.f ? cell.f : (cell.v !== null && cell.v !== undefined ? cell.v.toString() : "");
-    }
-
-    async function loadAllData() {
-      document.getElementById('syncStatus').innerText = "Syncing...";
-      try {
-        const [loginData, fboData] = await Promise.all([
-          fetchGVizData(GID_LOGIN),
-          fetchGVizData(GID_FBO).catch(() => null)
-        ]);
-
-        // Map FBO profiles
-        const fboMap = {};
-        if (fboData && fboData.table && fboData.table.rows) {
-          fboData.table.rows.forEach(r => {
-            const c = r.c;
-            if (c && c[0]) {
-              const name = getCellValue(c[0]).trim().toLowerCase();
-              if (name) {
-                fboMap[name] = {
-                  mentor: getCellValue(c[3]) || "--",
-                  workingType: getCellValue(c[4]) || "Full-Time"
-                };
-              }
-            }
-          });
-        }
-
-        // Process Login Sheet Rows
-        const rows = loginData.table.rows;
-        const list = [];
-
-        // Start from row index 3 or 4 (data rows)
-        for (let i = 0; i < rows.length; i++) {
-          const c = rows[i].c;
-          if (!c || !c[1]) continue;
-          
-          const execName = getCellValue(c[1]).trim();
-          if (!execName || execName === "Executive Name" || execName === "0" || execName === "1") continue;
-
-          const date = getCellValue(c[0]) || "--";
-          const loginTime = getCellValue(c[2]) || "--";
-          const totalLogin = getCellValue(c[3]) || "--";
-          const totalBreak = getCellValue(c[4]) || "--";
-          const netLogin = getCellValue(c[5]) || "00:00:00";
-
-          const profile = fboMap[execName.toLowerCase()] || { mentor: "--", workingType: "Full-Time" };
-          const isPt = profile.workingType.toLowerCase().includes("part");
-          
-          const netSec = timeToSeconds(netLogin);
-          const targetSec = isPt ? (4 * 3600) : (7 * 3600);
-          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
-          const badge = resolveStatus(netSec, isPt);
-
-          list.push({
-            date,
-            name: execName,
-            loginTime,
-            totalLogin,
-            totalBreak,
-            netLogin,
-            mentor: profile.mentor,
-            workingType: isPt ? "Part-Time" : "Full-Time",
-            badge,
-            progressPct
-          });
-        }
-
-        workforceDataset = list;
-        const syncTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        document.getElementById('syncStatus').innerText = `Synced at ${syncTime}`;
-
-        const container = document.getElementById('portalContainer');
-        if (list.length === 0) {
-          document.getElementById('kpiBar').style.display = 'none';
-          container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
-          return;
-        }
-
-        if (list[0].date !== "--") {
-          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${list[0].date}`;
-        }
-
-        updateKpis(list);
-        renderCards(list);
-
-      } catch (err) {
-        document.getElementById('syncStatus').innerText = "Sync failed";
-        console.error(err);
-      }
     }
 
     function updateKpis(data) {
@@ -526,8 +522,8 @@
       renderCards(filtered);
     }
 
-    setInterval(loadAllData, 60000);
-    window.onload = loadAllData;
+    setInterval(triggerSync, 60000);
+    window.onload = triggerSync;
   </script>
 </body>
 </html>
