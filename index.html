@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Today's Live Login Dashboard</title>
 
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+  <!-- Prevent Mobile Browser Stale Cache -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="-1">
+  <meta http-equiv="Expires" content="0">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -85,13 +86,6 @@
       background: #22c55e;
       border-radius: 50%;
       box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
-      animation: pulse 1.8s infinite;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
-      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
     .header-actions {
@@ -113,9 +107,9 @@
       align-items: center;
       gap: 5px;
       backdrop-filter: blur(4px);
-      transition: all 0.15s;
+      transition: opacity 0.2s;
     }
-    .btn-action:active { background: rgba(255, 255, 255, 0.25); }
+    .btn-action:active { opacity: 0.7; }
 
     .header-heading-title {
       font-size: 20px;
@@ -232,7 +226,7 @@
     .hero-value { font-size: 18px; font-weight: 800; color: var(--hero-value); font-family: 'JetBrains Mono', monospace; }
 
     .progress-bar-wrap { background: var(--surface-sub); height: 6px; border-radius: 99px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; transition: width 0.4s ease; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; }
 
     .app-footer {
       text-align: center;
@@ -258,7 +252,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="requestTelemetrySync()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="loadTelemetry()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -266,7 +260,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Live</span>
+        <span class="sync-timestamp" id="syncStatus">Loading...</span>
       </div>
     </header>
 
@@ -291,7 +285,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Synchronizing workforce login records...</div>
+      <div class="state-message">Loading live workforce records...</div>
     </main>
 
     <footer class="app-footer">
@@ -301,10 +295,7 @@
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
-    const CACHE_KEY = "tara_live_telemetry_cache";
-
     let workforceDataset = [];
-    let isRequestActive = false;
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -334,29 +325,27 @@
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
-    // Instant Hydration from Local Storage on Mobile Pull-to-Refresh
-    function loadCachedState() {
-      try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && parsed.data && parsed.data.length > 0) {
-            workforceDataset = parsed.data;
-            if (parsed.shiftDate) document.getElementById('sessionDateLabel').innerText = `Shift Date: ${parsed.shiftDate}`;
-            document.getElementById('syncStatus').innerText = `Synced at ${parsed.updated || 'Recent'}`;
-            updateDashboard(workforceDataset);
-          }
-        }
-      } catch (e) {
-        console.warn("Cache load bypassed", e);
+    // Direct Global Receiver
+    window.handleTelemetryResponse = function(response) {
+      if (!response || !response.data) {
+        document.getElementById('syncStatus').innerText = "Empty Data";
+        return;
       }
-    }
+
+      workforceDataset = response.data;
+      document.getElementById('syncStatus').innerText = `Synced at ${response.updated}`;
+      if (response.shiftDate) {
+        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${response.shiftDate}`;
+      }
+
+      updateDashboard(workforceDataset);
+    };
 
     function updateDashboard(data) {
       const container = document.getElementById('portalContainer');
       if (!data || data.length === 0) {
         document.getElementById('kpiBar').style.display = 'none';
-        container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
+        container.innerHTML = '<div class="state-message">No active login records found.</div>';
         return;
       }
 
@@ -433,82 +422,24 @@
       renderCards(filtered);
     }
 
-    // Bulletproof Nonce-Based Sync
-    function requestTelemetrySync() {
-      if (isRequestActive) return;
-      isRequestActive = true;
+    // Direct, Single Clean Injection (No Background Loops)
+    function loadTelemetry() {
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      const nonce = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-      const cbName = `tara_cb_${nonce}`;
-
-      let completed = false;
-
-      const timer = setTimeout(() => {
-        if (!completed) {
-          completed = true;
-          isRequestActive = false;
-          try { delete window[cbName]; } catch(e){}
-          const s = document.getElementById(cbName);
-          if (s) s.remove();
-          if (workforceDataset.length > 0) {
-            document.getElementById('syncStatus').innerText = "Live";
-          }
-        }
-      }, 7000);
-
-      window[cbName] = function(payload) {
-        if (completed) return;
-        completed = true;
-        clearTimeout(timer);
-        isRequestActive = false;
-
-        try { delete window[cbName]; } catch(e){}
-        const s = document.getElementById(cbName);
-        if (s) s.remove();
-
-        if (payload && payload.data) {
-          workforceDataset = payload.data;
-          try { localStorage.setItem(CACHE_KEY, JSON.stringify(payload)); } catch (e) {}
-          
-          document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
-          if (payload.shiftDate) {
-            document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
-          }
-          updateDashboard(workforceDataset);
-        }
-      };
+      const old = document.getElementById('active-stream-tag');
+      if (old) old.remove();
 
       const script = document.createElement('script');
-      script.id = cbName;
-      script.type = 'text/javascript';
-      script.async = true;
-      script.src = `${WEB_APP_URL}?callback=${cbName}&_t=${nonce}`;
-
+      script.id = 'active-stream-tag';
+      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_ts=${Date.now()}`;
       script.onerror = function() {
-        if (!completed) {
-          completed = true;
-          clearTimeout(timer);
-          isRequestActive = false;
-          try { delete window[cbName]; } catch(e){}
-          script.remove();
-          if (workforceDataset.length > 0) {
-            document.getElementById('syncStatus').innerText = "Live (Cached)";
-          } else {
-            document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
-          }
-        }
+        document.getElementById('syncStatus').innerText = "Sync Failed";
       };
-
       document.body.appendChild(script);
     }
 
-    // Initialize and Auto-sync every 60 seconds
-    window.addEventListener('DOMContentLoaded', () => {
-      loadCachedState();
-      requestTelemetrySync();
-      setInterval(requestTelemetrySync, 60000);
-    });
+    // Har baar page open ya reload hone par fresh load karega
+    window.onload = loadTelemetry;
   </script>
 </body>
 </html>
