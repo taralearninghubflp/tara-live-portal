@@ -243,7 +243,7 @@
       letter-spacing: 0.02em;
     }
 
-    .state-message { text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; }
+    .state-message { text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -305,6 +305,8 @@
     const GID_DIRECTORY = "1318792633";
 
     let workforceDataset = [];
+    let dirDataRaw = null;
+    let loginDataRaw = null;
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -326,30 +328,6 @@
         link.href = canvas.toDataURL('image/png');
         link.click();
       });
-    }
-
-    function parseCSV(text) {
-      const rows = [];
-      let row = [''];
-      let inQuotes = false;
-      for (let i = 0; i < text.length; i++) {
-        const c = text[i];
-        const next = text[i + 1];
-        if (c === '"') {
-          if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
-          else { inQuotes = !inQuotes; }
-        } else if (c === ',' && !inQuotes) {
-          row.push('');
-        } else if ((c === '\r' || c === '\n') && !inQuotes) {
-          if (c === '\r' && next === '\n') { i++; }
-          rows.push(row);
-          row = [''];
-        } else {
-          row[row.length - 1] += c;
-        }
-      }
-      if (row.length > 1 || row[0] !== '') rows.push(row);
-      return rows;
     }
 
     function timeToSeconds(timeStr) {
@@ -388,68 +366,82 @@
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
-    async function fetchLiveTelemetry() {
-      document.getElementById('syncStatus').innerText = "Syncing...";
-      try {
-        const timestamp = Date.now();
-        const dirUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_DIRECTORY}&_=${timestamp}`;
-        const loginUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${GID_LOGINS}&_=${timestamp}`;
+    function getCellValue(cell) {
+      if (!cell) return "";
+      return (cell.f !== undefined && cell.f !== null) ? String(cell.f).trim() : 
+             (cell.v !== undefined && cell.v !== null) ? String(cell.v).trim() : "";
+    }
 
-        const [dirRes, loginRes] = await Promise.all([
-          fetch(dirUrl, { cache: "no-store" }),
-          fetch(loginUrl, { cache: "no-store" })
-        ]);
+    // JSONP Receiver 1: FBO Directory
+    window.handleGvizDirectory = function(res) {
+      dirDataRaw = res;
+      processTelemetry();
+    };
 
-        if (!dirRes.ok || !loginRes.ok) throw new Error("Network response error");
+    // JSONP Receiver 2: Login Overview
+    window.handleGvizLogins = function(res) {
+      loginDataRaw = res;
+      processTelemetry();
+    };
 
-        const [dirText, loginText] = await Promise.all([dirRes.text(), loginRes.text()]);
+    function processTelemetry() {
+      if (!dirDataRaw || !loginDataRaw) return;
 
-        // Process FBO Directory Map
-        const dirRows = parseCSV(dirText);
-        const fboMap = new Map();
-        for (let i = 1; i < dirRows.length; i++) {
-          const row = dirRows[i];
-          if (row[0] && row[0].trim()) {
-            fboMap.set(row[0].trim().toLowerCase(), {
-              mentor: row[3] ? row[3].trim() : 'Executive Office',
-              workingType: (row[4] && row[4].trim()) ? row[4].trim() : 'Full-Time'
+      const fboMap = new Map();
+      if (dirDataRaw.table && dirDataRaw.table.rows) {
+        dirDataRaw.table.rows.forEach(r => {
+          if (!r.c) return;
+          const name = getCellValue(r.c[0]).toLowerCase();
+          if (name) {
+            fboMap.set(name, {
+              mentor: getCellValue(r.c[3]) || "Executive Office",
+              workingType: getCellValue(r.c[4]) || "Full-Time"
             });
           }
-        }
+        });
+      }
 
-        // Process Filter Formula Rows from Row 5 (index 4)
-        const loginRows = parseCSV(loginText);
-        const list = [];
-        let detectedDate = "";
+      const list = [];
+      let detectedDate = "";
 
-        for (let i = 4; i < loginRows.length; i++) {
-          const row = loginRows[i];
-          if (!row || !row[1]) continue;
-          
-          const execName = row[1].trim();
-          if (!execName || execName === "0" || execName === "1" || execName === "Executive Name" || execName.length < 2) continue;
+      if (loginDataRaw.table && loginDataRaw.table.rows) {
+        const rows = loginDataRaw.table.rows;
+        // Rows in A5:G50 start from row index 4 (0-based)
+        for (let i = 4; i < rows.length; i++) {
+          const r = rows[i];
+          if (!r || !r.c) continue;
 
-          if (!detectedDate && row[0] && row[0].trim()) {
-            detectedDate = row[0].trim();
+          const shiftDate = getCellValue(r.c[0]);
+          const execName = getCellValue(r.c[1]);
+          const loginTime = getCellValue(r.c[2]) || "--";
+          const grossLogin = getCellValue(r.c[3]) || "00:00:00";
+          const breakTime = getCellValue(r.c[4]) || "00:00:00";
+          const netLogin = getCellValue(r.c[5]) || "00:00:00";
+
+          if (!execName || execName === "0" || execName === "1" || execName.toLowerCase() === "executive name" || execName.length < 2) {
+            continue;
+          }
+
+          if (!detectedDate && shiftDate) {
+            detectedDate = shiftDate;
           }
 
           const profile = fboMap.get(execName.toLowerCase()) || { mentor: "Executive Office", workingType: "Full-Time" };
           const isPartTime = profile.workingType.toLowerCase().includes("part");
-          
-          const netLogin = row[5] ? row[5].trim() : "00:00:00";
+
           const netSec = timeToSeconds(netLogin);
           const targetSec = isPartTime ? 14400 : 25200;
           const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
           const status = resolveStatus(netSec, isPartTime);
 
           list.push({
-            date: row[0] ? row[0].trim() : "--",
+            date: shiftDate || "--",
             name: execName,
             mentor: profile.mentor,
             workingType: isPartTime ? "Part-Time" : "Full-Time",
-            loginTime: row[2] ? row[2].trim() : "--",
-            totalLogin: row[3] ? row[3].trim() : "--",
-            totalBreak: row[4] ? row[4].trim() : "--",
+            loginTime: loginTime,
+            totalLogin: grossLogin,
+            totalBreak: breakTime,
             netLogin: netLogin,
             badge: status.badge,
             badgeClass: status.class,
@@ -457,20 +449,17 @@
             progressPct: progressPct
           });
         }
-
-        workforceDataset = list;
-
-        const updatedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
-        if (detectedDate) {
-          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${detectedDate}`;
-        }
-
-        updateDashboard(workforceDataset);
-      } catch (err) {
-        console.error("Fetch failed:", err);
-        document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
       }
+
+      workforceDataset = list;
+
+      const updatedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
+      if (detectedDate) {
+        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${detectedDate}`;
+      }
+
+      updateDashboard(workforceDataset);
     }
 
     function updateDashboard(data) {
@@ -552,6 +541,39 @@
         (item.mentor && item.mentor.toLowerCase().includes(q))
       );
       renderCards(filtered);
+    }
+
+    function fetchLiveTelemetry() {
+      document.getElementById('syncStatus').innerText = "Syncing...";
+      dirDataRaw = null;
+      loginDataRaw = null;
+
+      // Remove old injected scripts
+      const oldS1 = document.getElementById('gviz-dir');
+      if (oldS1) oldS1.remove();
+      const oldS2 = document.getElementById('gviz-login');
+      if (oldS2) oldS2.remove();
+
+      const ts = Date.now();
+      
+      const s1 = document.createElement('script');
+      s1.id = 'gviz-dir';
+      s1.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizDirectory&gid=${GID_DIRECTORY}&headers=0&_=${ts}`;
+      s1.onerror = () => {
+        document.getElementById('syncStatus').innerText = "Permission Required";
+        document.getElementById('portalContainer').innerHTML = `
+          <div class="state-message" style="color: #ef4444;">
+            ⚠️ <strong>Google Sheet Access Denied</strong><br>
+            Please set Sheet Sharing to: <strong>"Anyone with the link can view"</strong>.
+          </div>
+        `;
+      };
+      document.body.appendChild(s1);
+
+      const s2 = document.createElement('script');
+      s2.id = 'gviz-login';
+      s2.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizLogins&gid=${GID_LOGINS}&headers=0&_=${ts}`;
+      document.body.appendChild(s2);
     }
 
     window.onload = () => {
