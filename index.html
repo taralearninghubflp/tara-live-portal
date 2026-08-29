@@ -47,7 +47,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 580px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
 
-    /* Bold Executive Header */
+    /* Master Header */
     .master-header {
       background: var(--header-bg);
       border-radius: 18px;
@@ -126,7 +126,7 @@
     .shift-tag { color: #93c5fd; }
     .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
 
-    /* Search & Filter Bar */
+    /* Search Bar */
     .search-wrapper { position: relative; margin-bottom: 12px; }
     .search-input {
       width: 100%;
@@ -146,7 +146,7 @@
     .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
     .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 
-    /* Agent Cards */
+    /* Cards */
     .agent-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -300,18 +300,23 @@
       });
     }
 
+    // Dynamic Anti-Cache Injection Engine
     function fetchLiveTelemetry() {
       document.getElementById('syncStatus').innerText = "Syncing...";
       
       const oldScript = document.getElementById('jsonpFeedScript');
       if (oldScript) oldScript.remove();
 
+      const uniqueToken = Date.now() + "_" + Math.random().toString(36).substring(2, 9);
       const script = document.createElement('script');
       script.id = 'jsonpFeedScript';
-      script.src = `${API_URL}?callback=renderTelemetryFeed&_=${Date.now()}`;
+      script.src = `${API_URL}?callback=renderTelemetryFeed&nocache=${uniqueToken}`;
+      
       script.onerror = function() {
-        document.getElementById('syncStatus').innerText = "Sync failed";
+        document.getElementById('syncStatus').innerText = "Reconnecting...";
+        setTimeout(fetchLiveTelemetry, 4000);
       };
+
       document.body.appendChild(script);
     }
 
