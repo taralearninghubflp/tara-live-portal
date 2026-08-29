@@ -305,8 +305,7 @@
     const GID_DIRECTORY = "1318792633";
 
     let workforceDataset = [];
-    let dirDataRaw = null;
-    let loginDataRaw = null;
+    let fboDirectoryCache = new Map();
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -368,87 +367,80 @@
 
     function getCellValue(cell) {
       if (!cell) return "";
-      return (cell.f !== undefined && cell.f !== null) ? String(cell.f).trim() : 
-             (cell.v !== undefined && cell.v !== null) ? String(cell.v).trim() : "";
+      if (cell.f !== undefined && cell.f !== null) return String(cell.f).trim();
+      if (cell.v !== undefined && cell.v !== null) return String(cell.v).trim();
+      return "";
     }
 
-    // JSONP Receiver 1: FBO Directory
-    window.handleGvizDirectory = function(res) {
-      dirDataRaw = res;
-      processTelemetry();
-    };
-
-    // JSONP Receiver 2: Login Overview
-    window.handleGvizLogins = function(res) {
-      loginDataRaw = res;
-      processTelemetry();
-    };
-
-    function processTelemetry() {
-      if (!dirDataRaw || !loginDataRaw) return;
-
-      const fboMap = new Map();
-      if (dirDataRaw.table && dirDataRaw.table.rows) {
-        dirDataRaw.table.rows.forEach(r => {
-          if (!r.c) return;
+    // Directory Callback
+    window.handleDirectoryData = function(res) {
+      if (res && res.table && res.table.rows) {
+        res.table.rows.forEach(r => {
+          if (!r || !r.c) return;
           const name = getCellValue(r.c[0]).toLowerCase();
           if (name) {
-            fboMap.set(name, {
+            fboDirectoryCache.set(name, {
               mentor: getCellValue(r.c[3]) || "Executive Office",
               workingType: getCellValue(r.c[4]) || "Full-Time"
             });
           }
         });
       }
+    };
 
+    // Main Logins Callback
+    window.handleLoginData = function(res) {
+      if (!res || !res.table || !res.table.rows) {
+        document.getElementById('syncStatus').innerText = "Empty stream";
+        return;
+      }
+
+      const rows = res.table.rows;
       const list = [];
       let detectedDate = "";
 
-      if (loginDataRaw.table && loginDataRaw.table.rows) {
-        const rows = loginDataRaw.table.rows;
-        // Rows in A5:G50 start from row index 4 (0-based)
-        for (let i = 4; i < rows.length; i++) {
-          const r = rows[i];
-          if (!r || !r.c) continue;
+      // Starts reading rows from row 5 (index 4)
+      for (let i = 4; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r.c) continue;
 
-          const shiftDate = getCellValue(r.c[0]);
-          const execName = getCellValue(r.c[1]);
-          const loginTime = getCellValue(r.c[2]) || "--";
-          const grossLogin = getCellValue(r.c[3]) || "00:00:00";
-          const breakTime = getCellValue(r.c[4]) || "00:00:00";
-          const netLogin = getCellValue(r.c[5]) || "00:00:00";
+        const shiftDate = getCellValue(r.c[0]);
+        const execName = getCellValue(r.c[1]);
+        const loginTime = getCellValue(r.c[2]) || "--";
+        const grossLogin = getCellValue(r.c[3]) || "00:00:00";
+        const breakTime = getCellValue(r.c[4]) || "00:00:00";
+        const netLogin = getCellValue(r.c[5]) || "00:00:00";
 
-          if (!execName || execName === "0" || execName === "1" || execName.toLowerCase() === "executive name" || execName.length < 2) {
-            continue;
-          }
-
-          if (!detectedDate && shiftDate) {
-            detectedDate = shiftDate;
-          }
-
-          const profile = fboMap.get(execName.toLowerCase()) || { mentor: "Executive Office", workingType: "Full-Time" };
-          const isPartTime = profile.workingType.toLowerCase().includes("part");
-
-          const netSec = timeToSeconds(netLogin);
-          const targetSec = isPartTime ? 14400 : 25200;
-          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
-          const status = resolveStatus(netSec, isPartTime);
-
-          list.push({
-            date: shiftDate || "--",
-            name: execName,
-            mentor: profile.mentor,
-            workingType: isPartTime ? "Part-Time" : "Full-Time",
-            loginTime: loginTime,
-            totalLogin: grossLogin,
-            totalBreak: breakTime,
-            netLogin: netLogin,
-            badge: status.badge,
-            badgeClass: status.class,
-            isMet: status.isMet,
-            progressPct: progressPct
-          });
+        if (!execName || execName === "0" || execName === "1" || execName.toLowerCase() === "executive name" || execName.length < 2) {
+          continue;
         }
+
+        if (!detectedDate && shiftDate) {
+          detectedDate = shiftDate;
+        }
+
+        const profile = fboDirectoryCache.get(execName.toLowerCase()) || { mentor: "Executive Office", workingType: "Full-Time" };
+        const isPartTime = profile.workingType.toLowerCase().includes("part");
+
+        const netSec = timeToSeconds(netLogin);
+        const targetSec = isPartTime ? 14400 : 25200;
+        const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
+        const status = resolveStatus(netSec, isPartTime);
+
+        list.push({
+          date: shiftDate || "--",
+          name: execName,
+          mentor: profile.mentor,
+          workingType: isPartTime ? "Part-Time" : "Full-Time",
+          loginTime: loginTime,
+          totalLogin: grossLogin,
+          totalBreak: breakTime,
+          netLogin: netLogin,
+          badge: status.badge,
+          badgeClass: status.class,
+          isMet: status.isMet,
+          progressPct: progressPct
+        });
       }
 
       workforceDataset = list;
@@ -460,7 +452,7 @@
       }
 
       updateDashboard(workforceDataset);
-    }
+    };
 
     function updateDashboard(data) {
       const container = document.getElementById('portalContainer');
@@ -545,35 +537,28 @@
 
     function fetchLiveTelemetry() {
       document.getElementById('syncStatus').innerText = "Syncing...";
-      dirDataRaw = null;
-      loginDataRaw = null;
 
-      // Remove old injected scripts
-      const oldS1 = document.getElementById('gviz-dir');
-      if (oldS1) oldS1.remove();
-      const oldS2 = document.getElementById('gviz-login');
-      if (oldS2) oldS2.remove();
+      const oldDir = document.getElementById('script-gviz-dir');
+      if (oldDir) oldDir.remove();
+      const oldLogin = document.getElementById('script-gviz-login');
+      if (oldLogin) oldLogin.remove();
 
       const ts = Date.now();
-      
-      const s1 = document.createElement('script');
-      s1.id = 'gviz-dir';
-      s1.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizDirectory&gid=${GID_DIRECTORY}&headers=0&_=${ts}`;
-      s1.onerror = () => {
-        document.getElementById('syncStatus').innerText = "Permission Required";
-        document.getElementById('portalContainer').innerHTML = `
-          <div class="state-message" style="color: #ef4444;">
-            ⚠️ <strong>Google Sheet Access Denied</strong><br>
-            Please set Sheet Sharing to: <strong>"Anyone with the link can view"</strong>.
-          </div>
-        `;
-      };
-      document.body.appendChild(s1);
 
-      const s2 = document.createElement('script');
-      s2.id = 'gviz-login';
-      s2.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizLogins&gid=${GID_LOGINS}&headers=0&_=${ts}`;
-      document.body.appendChild(s2);
+      // Fetch Directory Script
+      const sDir = document.createElement('script');
+      sDir.id = 'script-gviz-dir';
+      sDir.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleDirectoryData&gid=${GID_DIRECTORY}&headers=0&_=${ts}`;
+      document.body.appendChild(sDir);
+
+      // Fetch Logins Script
+      const sLogin = document.createElement('script');
+      sLogin.id = 'script-gviz-login';
+      sLogin.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleLoginData&gid=${GID_LOGINS}&headers=0&_=${ts}`;
+      sLogin.onerror = () => {
+        document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
+      };
+      document.body.appendChild(sLogin);
     }
 
     window.onload = () => {
