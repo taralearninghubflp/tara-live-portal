@@ -10,7 +10,7 @@
   <meta http-equiv="Expires" content="0">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -90,8 +90,8 @@
 
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
-      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.0); }
-      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
     .header-actions {
@@ -258,7 +258,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="triggerScriptSync()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="triggerMobileSync()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -291,7 +291,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Connecting to Google Apps Script Secure Gateway...</div>
+      <div class="state-message">Synchronizing workforce login records...</div>
     </main>
 
     <footer class="app-footer">
@@ -301,8 +301,9 @@
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
-
     let workforceDataset = [];
+    let activeScript = null;
+    let syncTimeout = null;
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -332,7 +333,14 @@
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
+    // Global Receiver for JSONP
     window.handleTelemetryResponse = function(response) {
+      if (syncTimeout) clearTimeout(syncTimeout);
+      if (activeScript && activeScript.parentNode) {
+        activeScript.parentNode.removeChild(activeScript);
+        activeScript = null;
+      }
+
       if (!response || !response.data) {
         document.getElementById('syncStatus').innerText = "Empty Data";
         return;
@@ -428,24 +436,37 @@
       renderCards(filtered);
     }
 
-    function triggerScriptSync() {
+    // Pure Mobile-Safe JSONP Protocol
+    function triggerMobileSync() {
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      const oldScript = document.getElementById('apps-script-stream');
-      if (oldScript) oldScript.remove();
+      if (activeScript && activeScript.parentNode) {
+        activeScript.parentNode.removeChild(activeScript);
+      }
 
       const script = document.createElement('script');
-      script.id = 'apps-script-stream';
-      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_=${Date.now()}`;
+      script.type = 'text/javascript';
+      script.async = true;
+      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_ts=${Date.now()}`;
+      
       script.onerror = function() {
-        document.getElementById('syncStatus').innerText = "Connection Failed";
+        document.getElementById('syncStatus').innerText = "Sync Failed (Retrying...)";
       };
-      document.body.appendChild(script);
+
+      activeScript = script;
+      document.head.appendChild(script);
+
+      // Auto fallback if network hangs on mobile
+      syncTimeout = setTimeout(() => {
+        if (document.getElementById('syncStatus').innerText === "Syncing...") {
+          document.getElementById('syncStatus').innerText = "Reconnecting...";
+        }
+      }, 10000);
     }
 
     window.onload = () => {
-      triggerScriptSync();
-      setInterval(triggerScriptSync, 25000);
+      triggerMobileSync();
+      setInterval(triggerMobileSync, 30000);
     };
   </script>
 </body>
