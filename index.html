@@ -1,24 +1,417 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TARA Talent Solutions — Workforce Telemetry</title>
+  <title>Today's Live Login Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background-color: #070a12; }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
+    :root {
+      --bg: #070a12;
+      --surface: #0f172a;
+      --surface-sub: #1e293b;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-light: rgba(255, 255, 255, 0.15);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --header-bg: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+      --hero-bg: linear-gradient(180deg, rgba(6, 78, 59, 0.5) 0%, rgba(2, 44, 34, 0.75) 100%);
+      --hero-border: rgba(16, 185, 129, 0.45);
+      --hero-label: #34d399;
+      --hero-value: #ecfdf5;
     }
+
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --surface-sub: #f8fafc;
+      --border: #e2e8f0;
+      --border-light: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --header-bg: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+      --hero-bg: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+      --hero-border: #86efac;
+      --hero-label: #166534;
+      --hero-value: #14532d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 580px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
+
+    .master-header {
+      background: var(--header-bg);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .header-actions { display: flex; align-items: center; gap: 6px; }
+    .btn-action {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 6px 11px;
+      border-radius: 9px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .header-heading-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .header-info-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+    }
+    .shift-tag { color: #93c5fd; }
+    .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
+
+    .search-wrapper { position: relative; margin-bottom: 12px; }
+    .search-input {
+      width: 100%;
+      padding: 12px 16px 12px 38px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+    }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
+
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
+    .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
+    .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
+    .executive-info { display: flex; align-items: center; gap: 10px; }
+    .avatar-badge {
+      width: 36px;
+      height: 36px;
+      background: var(--surface-sub);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .executive-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .meta-tags { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+    .tag-type { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .tag-pt { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .tag-ft { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .tag-mentor { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-align: right; white-space: nowrap; }
+    .badge-excellent { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-fullday { background: rgba(20, 184, 166, 0.15); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.3); }
+    .badge-halfday { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-progress { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-pending { background: rgba(249, 115, 22, 0.15); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.3); }
+    .badge-absent { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .metrics-container { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .sub-metrics-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface-sub);
+      padding: 6px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+    .metric-title { color: var(--text-muted); font-weight: 500; }
+    .metric-data { font-weight: 700; color: var(--text); font-feature-settings: "tnum"; }
+
+    .hero-net-metric {
+      background: var(--hero-bg);
+      border: 1.5px solid var(--hero-border);
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .hero-label { font-size: 9px; font-weight: 800; color: var(--hero-label); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .hero-value { font-size: 19px; font-weight: 800; color: var(--hero-value); font-feature-settings: "tnum"; }
+
+    .progress-bar-wrap { background: var(--surface-sub); height: 5px; border-radius: 99px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: #10b981; border-radius: 99px; }
+
+    .app-footer { text-align: center; padding: 18px 8px 24px 8px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .state-message { text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; }
   </style>
 </head>
 <body>
-  <iframe 
-    src="https://script.google.com/macros/s/AKfycbxm_hpDLvkFlIR8UQzTGxCe62-vjt_poyVQDieMLwn7jx5kR5EPDroIHOPwWuffFRYDNg/exec" 
-    allow="clipboard-write">
-  </iframe>
+
+  <div id="captureArea">
+    <header class="master-header">
+      <div class="header-top-row">
+        <div class="live-badge">
+          <span class="pulse-dot"></span>
+          <span>LIVE TELEMETRY</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn-action" onclick="toggleTheme()" id="themeBtn">☀️</button>
+          <button class="btn-action" onclick="captureScreen()">📸 Save</button>
+          <button class="btn-action" onclick="fetchPortalData()">↻ Sync</button>
+        </div>
+      </div>
+
+      <div class="header-heading-title">TODAY'S LIVE LOGIN</div>
+
+      <div class="header-info-strip">
+        <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
+        <span class="sync-timestamp" id="syncStatus">Syncing stream...</span>
+      </div>
+    </header>
+
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Search by executive or mentor..." onkeyup="filterPortalData()">
+    </div>
+
+    <div class="kpi-row" id="kpiBar" style="display: none;">
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpiTotal">0</div>
+        <div class="kpi-label">Active Team</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpiCompleted" style="color: #34d399;">0</div>
+        <div class="kpi-label">Target Met</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpiInProgress" style="color: #60a5fa;">0</div>
+        <div class="kpi-label">In Shift</div>
+      </div>
+    </div>
+
+    <main id="portalContainer">
+      <div class="state-message">Synchronizing workforce login records...</div>
+    </main>
+
+    <footer class="app-footer">
+      Powered by TARA Talent Solutions
+    </footer>
+  </div>
+
+  <script>
+    const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxm_hpDLvkFlIR8UQzTGxCe62-vjt_poyVQDieMLwn7jx5kR5EPDroIHOPwWuffFRYDNg/exec";
+    let workforceDataset = [];
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const target = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', target);
+      document.getElementById('themeBtn').innerText = target === 'dark' ? '☀️' : '🌙';
+    }
+
+    function captureScreen() {
+      const target = document.getElementById('captureArea');
+      html2canvas(target, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Live_Login_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    function resolveBadgeClass(badge) {
+      if (!badge) return 'badge-progress';
+      const b = badge.toLowerCase();
+      if (b.includes("exceeded") || b.includes("excellent")) return 'badge-excellent';
+      if (b.includes("met") || b.includes("full day")) return 'badge-fullday';
+      if (b.includes("half day")) return 'badge-halfday';
+      if (b.includes("pending")) return 'badge-pending';
+      if (b.includes("not met") || b.includes("absent")) return 'badge-absent';
+      return 'badge-progress';
+    }
+
+    function getInitials(name) {
+      if (!name) return 'EX';
+      const parts = name.trim().split(' ');
+      return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
+    }
+
+    function updateKpis(data) {
+      document.getElementById('kpiBar').style.display = 'grid';
+      document.getElementById('kpiTotal').innerText = data.length;
+      const completed = data.filter(d => (d.badge || '').includes('Met') || (d.badge || '').includes('Exceeded') || (d.badge || '').includes('Excellent')).length;
+      document.getElementById('kpiCompleted').innerText = completed;
+      document.getElementById('kpiInProgress').innerText = data.length - completed;
+    }
+
+    function renderPortalView(response) {
+      workforceDataset = response.data || [];
+      const updatedTime = response.updated || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
+      
+      const container = document.getElementById('portalContainer');
+      if (workforceDataset.length === 0) {
+        document.getElementById('kpiBar').style.display = 'none';
+        container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
+        return;
+      }
+      
+      if (workforceDataset[0] && workforceDataset[0].date && workforceDataset[0].date !== "--") {
+        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${workforceDataset[0].date}`;
+      }
+      
+      updateKpis(workforceDataset);
+      renderCards(workforceDataset);
+    }
+
+    function renderCards(dataList) {
+      const container = document.getElementById('portalContainer');
+      container.innerHTML = '';
+
+      dataList.forEach(item => {
+        const badgeClass = resolveBadgeClass(item.badge);
+        const initials = getInitials(item.name);
+        const isPt = item.workingType === "Part-Time";
+        
+        const card = document.createElement('div');
+        card.className = 'agent-card';
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="executive-info">
+              <div class="avatar-badge">${initials}</div>
+              <div>
+                <div class="executive-name">${item.name}</div>
+                <div class="meta-tags">
+                  <span class="tag-type ${isPt ? 'tag-pt' : 'tag-ft'}">${item.workingType}</span>
+                  <span class="tag-mentor">• ${item.mentor || 'Direct'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="badge ${badgeClass}">${item.badge}</div>
+          </div>
+          
+          <div class="metrics-container">
+            <div class="sub-metrics-grid">
+              <div class="metric-row">
+                <span class="metric-title">Login</span>
+                <span class="metric-data">${item.loginTime}</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-title">Gross</span>
+                <span class="metric-data">${item.totalLogin}</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-title">Break</span>
+                <span class="metric-data">${item.totalBreak}</span>
+              </div>
+            </div>
+            
+            <div class="hero-net-metric">
+              <span class="hero-label">Net Production</span>
+              <span class="hero-value">${item.netLogin}</span>
+            </div>
+          </div>
+
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width: ${item.progressPct}%;"></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterPortalData() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const filtered = workforceDataset.filter(item => 
+        item.name.toLowerCase().includes(q) || 
+        (item.mentor && item.mentor.toLowerCase().includes(q))
+      );
+      renderCards(filtered);
+    }
+
+    function fetchPortalData() {
+      document.getElementById('syncStatus').innerText = "Syncing...";
+      fetch(API_ENDPOINT)
+        .then(res => res.json())
+        .then(data => renderPortalView(data))
+        .catch(err => {
+          document.getElementById('syncStatus').innerText = "Sync failed";
+        });
+    }
+
+    setInterval(fetchPortalData, 60000);
+    window.onload = fetchPortalData;
+  </script>
 </body>
 </html>
