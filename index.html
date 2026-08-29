@@ -258,7 +258,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="performSync()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="executeSync()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -266,7 +266,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Syncing stream...</span>
+        <span class="sync-timestamp" id="syncStatus">Connecting stream...</span>
       </div>
     </header>
 
@@ -303,7 +303,6 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
     let workforceDataset = [];
     let isRequestActive = false;
-    let requestCount = 0;
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -333,20 +332,16 @@
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
-    // Single Consistent Receiver
     window.handleTelemetryResponse = function(response) {
       isRequestActive = false;
-
       if (!response || !response.data) {
-        document.getElementById('syncStatus').innerText = "Empty Data Received";
+        document.getElementById('syncStatus').innerText = "Empty Data";
         return;
       }
 
       workforceDataset = response.data;
-      const timeStr = response.updated || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      document.getElementById('syncStatus').innerText = `Synced at ${timeStr}`;
-
-      if (response.shiftDate && response.shiftDate !== "--") {
+      document.getElementById('syncStatus').innerText = `Synced at ${response.updated}`;
+      if (response.shiftDate) {
         document.getElementById('sessionDateLabel').innerText = `Shift Date: ${response.shiftDate}`;
       }
 
@@ -434,43 +429,63 @@
       renderCards(filtered);
     }
 
-    // High-Stability Mobile JSONP Pipeline
-    function performSync() {
+    // Dual-Channel Sync Engine (Direct Script Injection + Mobile Proxy Fallback)
+    async function executeSync() {
       if (isRequestActive) return;
       isRequestActive = true;
-      requestCount++;
-
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      // Clean up previous dynamic scripts
-      const old = document.querySelectorAll('.dynamic-telemetry-tag');
-      old.forEach(el => el.remove());
+      const ts = Date.now();
+      const targetUrl = `${WEB_APP_URL}?callback=handleTelemetryResponse&_ts=${ts}`;
+
+      // Channel 1: High-Speed Direct Script Injection
+      const oldScript = document.getElementById('telemetry-script-stream');
+      if (oldScript) oldScript.remove();
 
       const script = document.createElement('script');
-      script.className = 'dynamic-telemetry-tag';
-      script.src = `${WEB_APP_URL}?callback=handleTelemetryResponse&_req=${requestCount}_${Date.now()}`;
-      
-      script.onerror = function() {
-        isRequestActive = false;
-        if (workforceDataset.length > 0) {
-          // If previous data exists, keep UI and show status
-          document.getElementById('syncStatus').innerText = "Syncing in background...";
-        } else {
-          document.getElementById('syncStatus').innerText = "Connecting...";
+      script.id = 'telemetry-script-stream';
+      script.src = targetUrl;
+
+      // Channel 2: If Mobile Webview blocks direct connection after 5 seconds
+      const proxyFallbackTimer = setTimeout(async () => {
+        if (isRequestActive) {
+          try {
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+            const res = await fetch(proxyUrl);
+            const text = await res.text();
+            if (text.includes('handleTelemetryResponse(')) {
+              eval(text); // Safe evaluation of pure JSONP return
+            }
+          } catch (e) {
+            document.getElementById('syncStatus').innerText = "Retrying Stream...";
+            isRequestActive = false;
+          }
         }
+      }, 5000);
+
+      script.onload = () => {
+        clearTimeout(proxyFallbackTimer);
+      };
+
+      script.onerror = () => {
+        clearTimeout(proxyFallbackTimer);
+        // Instant Proxy attempt on immediate network fail
+        fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`)
+          .then(r => r.text())
+          .then(t => { if(t.includes('handleTelemetryResponse(')) eval(t); })
+          .catch(() => {
+            document.getElementById('syncStatus').innerText = "Connection Failed";
+            isRequestActive = false;
+          });
       };
 
       document.body.appendChild(script);
-
-      // Auto-unlock lock after 8 seconds
-      setTimeout(() => {
-        isRequestActive = false;
-      }, 8000);
     }
 
+    // 1-Minute Exact Auto-Sync Loop
     window.onload = () => {
-      performSync();
-      setInterval(performSync, 20000);
+      executeSync();
+      setInterval(executeSync, 60000); // Exactly 1 Minute (60 Seconds)
     };
   </script>
 </body>
