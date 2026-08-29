@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Today's Live Login Dashboard</title>
+  <title>Today's Live Login | TARA Talent Solutions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -44,6 +44,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 580px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
 
+    /* Bold High-Impact Master Header */
     .master-header {
       background: var(--header-bg);
       border-radius: 18px;
@@ -54,7 +55,13 @@
       color: #ffffff;
     }
 
-    .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
     .live-badge {
       display: inline-flex;
       align-items: center;
@@ -67,6 +74,7 @@
       letter-spacing: 0.05em;
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
+
     .pulse-dot {
       width: 8px;
       height: 8px;
@@ -75,6 +83,7 @@
       box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
       animation: pulse 1.8s infinite;
     }
+
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
       70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
@@ -119,6 +128,7 @@
     .shift-tag { color: #93c5fd; }
     .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
 
+    /* Search & Filter */
     .search-wrapper { position: relative; margin-bottom: 12px; }
     .search-input {
       width: 100%;
@@ -132,11 +142,13 @@
     }
     .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
 
+    /* Summary KPI Bar */
     .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
     .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
     .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 
+    /* Cards */
     .agent-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -223,7 +235,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn">☀️</button>
           <button class="btn-action" onclick="captureScreen()">📸 Save</button>
-          <button class="btn-action" onclick="fetchPortalData()">↻ Sync</button>
+          <button class="btn-action" onclick="loadAllData()">↻ Sync</button>
         </div>
       </div>
 
@@ -231,7 +243,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Syncing stream...</span>
+        <span class="sync-timestamp" id="syncStatus">Syncing live...</span>
       </div>
     </header>
 
@@ -256,7 +268,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Synchronizing workforce login records...</div>
+      <div class="state-message">Loading real-time sheet telemetry...</div>
     </main>
 
     <footer class="app-footer">
@@ -265,7 +277,10 @@
   </div>
 
   <script>
-    const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxm_hpDLvkFlIR8UQzTGxCe62-vjt_poyVQDieMLwn7jx5kR5EPDroIHOPwWuffFRYDNg/exec";
+    const SPREADSHEET_ID = "1jxkUaREVII_2SeRCG076fv__ONKs6AQHMMg8OGc9pvs";
+    const GID_LOGIN = "461503710";
+    const GID_FBO = "1318792633";
+
     let workforceDataset = [];
 
     function toggleTheme() {
@@ -290,6 +305,43 @@
       });
     }
 
+    function fetchGVizData(gid) {
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}&t=${Date.now()}`;
+      return fetch(url)
+        .then(res => res.text())
+        .then(text => {
+          const jsonText = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+          return JSON.parse(jsonText);
+        });
+    }
+
+    function timeToSeconds(timeStr) {
+      if (!timeStr || timeStr.indexOf(":") === -1) return 0;
+      const parts = timeStr.split(":");
+      return ((parseInt(parts[0], 10) || 0) * 3600) + ((parseInt(parts[1], 10) || 0) * 60) + (parseInt(parts[2], 10) || 0);
+    }
+
+    function resolveStatus(netSec, isPartTime) {
+      const hours = netSec / 3600;
+      const now = new Date();
+      const curHour = now.getHours() + (now.getMinutes() / 60);
+
+      if (isPartTime) {
+        if (hours >= 4.5) return "⭐ Target Exceeded";
+        if (hours >= 4.0) return "✅ Part-Time Met";
+        if (curHour < 20.5) return "⏳ In Progress";
+        if (curHour < 22.0) return "⚠️ Pending Hours";
+        return "❌ Target Not Met";
+      } else {
+        if (hours >= 8.0) return "⭐ Excellent Performance";
+        if (hours >= 7.0) return "✅ Full Day Met";
+        if (hours >= 4.0) return "⚠️ Half Day Recorded";
+        if (curHour < 20.5) return "⏳ In Progress";
+        if (curHour < 22.0) return "⚠️ Pending Target";
+        return "❌ Target Not Met";
+      }
+    }
+
     function resolveBadgeClass(badge) {
       if (!badge) return 'badge-progress';
       const b = badge.toLowerCase();
@@ -307,32 +359,106 @@
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
     }
 
+    function getCellValue(cell) {
+      if (!cell) return "";
+      return cell.f ? cell.f : (cell.v !== null && cell.v !== undefined ? cell.v.toString() : "");
+    }
+
+    async function loadAllData() {
+      document.getElementById('syncStatus').innerText = "Syncing...";
+      try {
+        const [loginData, fboData] = await Promise.all([
+          fetchGVizData(GID_LOGIN),
+          fetchGVizData(GID_FBO).catch(() => null)
+        ]);
+
+        // Map FBO profiles
+        const fboMap = {};
+        if (fboData && fboData.table && fboData.table.rows) {
+          fboData.table.rows.forEach(r => {
+            const c = r.c;
+            if (c && c[0]) {
+              const name = getCellValue(c[0]).trim().toLowerCase();
+              if (name) {
+                fboMap[name] = {
+                  mentor: getCellValue(c[3]) || "--",
+                  workingType: getCellValue(c[4]) || "Full-Time"
+                };
+              }
+            }
+          });
+        }
+
+        // Process Login Sheet Rows
+        const rows = loginData.table.rows;
+        const list = [];
+
+        // Start from row index 3 or 4 (data rows)
+        for (let i = 0; i < rows.length; i++) {
+          const c = rows[i].c;
+          if (!c || !c[1]) continue;
+          
+          const execName = getCellValue(c[1]).trim();
+          if (!execName || execName === "Executive Name" || execName === "0" || execName === "1") continue;
+
+          const date = getCellValue(c[0]) || "--";
+          const loginTime = getCellValue(c[2]) || "--";
+          const totalLogin = getCellValue(c[3]) || "--";
+          const totalBreak = getCellValue(c[4]) || "--";
+          const netLogin = getCellValue(c[5]) || "00:00:00";
+
+          const profile = fboMap[execName.toLowerCase()] || { mentor: "--", workingType: "Full-Time" };
+          const isPt = profile.workingType.toLowerCase().includes("part");
+          
+          const netSec = timeToSeconds(netLogin);
+          const targetSec = isPt ? (4 * 3600) : (7 * 3600);
+          const progressPct = Math.min(Math.round((netSec / targetSec) * 100), 100);
+          const badge = resolveStatus(netSec, isPt);
+
+          list.push({
+            date,
+            name: execName,
+            loginTime,
+            totalLogin,
+            totalBreak,
+            netLogin,
+            mentor: profile.mentor,
+            workingType: isPt ? "Part-Time" : "Full-Time",
+            badge,
+            progressPct
+          });
+        }
+
+        workforceDataset = list;
+        const syncTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        document.getElementById('syncStatus').innerText = `Synced at ${syncTime}`;
+
+        const container = document.getElementById('portalContainer');
+        if (list.length === 0) {
+          document.getElementById('kpiBar').style.display = 'none';
+          container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
+          return;
+        }
+
+        if (list[0].date !== "--") {
+          document.getElementById('sessionDateLabel').innerText = `Shift Date: ${list[0].date}`;
+        }
+
+        updateKpis(list);
+        renderCards(list);
+
+      } catch (err) {
+        document.getElementById('syncStatus').innerText = "Sync failed";
+        console.error(err);
+      }
+    }
+
     function updateKpis(data) {
       document.getElementById('kpiBar').style.display = 'grid';
       document.getElementById('kpiTotal').innerText = data.length;
       const completed = data.filter(d => (d.badge || '').includes('Met') || (d.badge || '').includes('Exceeded') || (d.badge || '').includes('Excellent')).length;
       document.getElementById('kpiCompleted').innerText = completed;
       document.getElementById('kpiInProgress').innerText = data.length - completed;
-    }
-
-    function renderPortalView(response) {
-      workforceDataset = response.data || [];
-      const updatedTime = response.updated || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-      document.getElementById('syncStatus').innerText = `Synced at ${updatedTime}`;
-      
-      const container = document.getElementById('portalContainer');
-      if (workforceDataset.length === 0) {
-        document.getElementById('kpiBar').style.display = 'none';
-        container.innerHTML = '<div class="state-message">No active login records found for today.</div>';
-        return;
-      }
-      
-      if (workforceDataset[0] && workforceDataset[0].date && workforceDataset[0].date !== "--") {
-        document.getElementById('sessionDateLabel').innerText = `Shift Date: ${workforceDataset[0].date}`;
-      }
-      
-      updateKpis(workforceDataset);
-      renderCards(workforceDataset);
     }
 
     function renderCards(dataList) {
@@ -400,18 +526,8 @@
       renderCards(filtered);
     }
 
-    function fetchPortalData() {
-      document.getElementById('syncStatus').innerText = "Syncing...";
-      fetch(API_ENDPOINT)
-        .then(res => res.json())
-        .then(data => renderPortalView(data))
-        .catch(err => {
-          document.getElementById('syncStatus').innerText = "Sync failed";
-        });
-    }
-
-    setInterval(fetchPortalData, 60000);
-    window.onload = fetchPortalData;
+    setInterval(loadAllData, 60000);
+    window.onload = loadAllData;
   </script>
 </body>
 </html>
