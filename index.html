@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Google Official Charts API for Failproof Sheet Connection -->
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
@@ -134,13 +136,13 @@
     }
     .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
 
-    /* KPI Summary Strip */
+    /* Summary Bar */
     .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
     .kpi-value { font-size: 17px; font-weight: 800; color: var(--text); font-feature-settings: "tnum"; }
     .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 
-    /* Agent Cards */
+    /* Cards */
     .agent-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -227,7 +229,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn">☀️</button>
           <button class="btn-action" onclick="captureScreen()">📸 Save</button>
-          <button class="btn-action" onclick="triggerSync()">↻ Sync</button>
+          <button class="btn-action" onclick="fetchAllData()">↻ Sync</button>
         </div>
       </div>
 
@@ -235,7 +237,7 @@
 
       <div class="header-info-strip">
         <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Syncing live...</span>
+        <span class="sync-timestamp" id="syncStatus">Connecting live...</span>
       </div>
     </header>
 
@@ -260,7 +262,7 @@
     </div>
 
     <main id="portalContainer">
-      <div class="state-message">Loading real-time sheet telemetry...</div>
+      <div class="state-message">Initializing live Google sheet connection...</div>
     </main>
 
     <footer class="app-footer">
@@ -275,6 +277,10 @@
 
     let workforceDataset = [];
     let fboProfilesMap = {};
+
+    // Initialize official Google Charts loader
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(fetchAllData);
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -298,61 +304,55 @@
       });
     }
 
-    function loadScript(url) {
-      const s = document.createElement('script');
-      s.src = url;
-      document.body.appendChild(s);
+    function querySheet(gid) {
+      return new Promise((resolve, reject) => {
+        const queryUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${gid}&headers=0`;
+        const query = new google.visualization.Query(queryUrl);
+        query.send(response => {
+          if (response.isError()) {
+            reject(response.getMessage() + ' ' + response.getDetailedMessage());
+          } else {
+            resolve(response.getDataTable());
+          }
+        });
+      });
     }
 
-    function triggerSync() {
+    async function fetchAllData() {
       document.getElementById('syncStatus').innerText = "Syncing...";
-      // 1. Fetch FBO Map first via JSONP
-      const fboUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleFBOResponse&gid=${GID_FBO}&_=${Date.now()}`;
-      loadScript(fboUrl);
-    }
-
-    window.handleFBOResponse = function(res) {
       try {
-        fboProfilesMap = {};
-        if (res && res.table && res.table.rows) {
-          res.table.rows.forEach(r => {
-            const c = r.c;
-            if (c && c[0]) {
-              const name = getCellValue(c[0]).trim().toLowerCase();
-              if (name) {
-                fboProfilesMap[name] = {
-                  mentor: getCellValue(c[3]) || "--",
-                  workingType: getCellValue(c[4]) || "Full-Time"
-                };
-              }
+        // Query FBO Profile sheet
+        try {
+          const fboTable = await querySheet(GID_FBO);
+          fboProfilesMap = {};
+          const numRows = fboTable.getNumberOfRows();
+          for (let r = 1; r < numRows; r++) {
+            const name = (fboTable.getFormattedValue(r, 0) || fboTable.getValue(r, 0) || "").toString().trim().toLowerCase();
+            if (name) {
+              fboProfilesMap[name] = {
+                mentor: fboTable.getFormattedValue(r, 3) || fboTable.getValue(r, 3) || "--",
+                workingType: fboTable.getFormattedValue(r, 4) || fboTable.getValue(r, 4) || "Full-Time"
+              };
             }
-          });
+          }
+        } catch (e) {
+          console.warn("FBO sheet skipped", e);
         }
-      } catch (e) {
-        console.error("FBO parse error", e);
-      }
-      // 2. Fetch Login Feed via JSONP
-      const loginUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:handleLoginResponse&gid=${GID_LOGIN}&_=${Date.now()}`;
-      loadScript(loginUrl);
-    };
 
-    window.handleLoginResponse = function(res) {
-      try {
-        const rows = res.table.rows;
+        // Query Login Sheet
+        const loginTable = await querySheet(GID_LOGIN);
+        const rowsCount = loginTable.getNumberOfRows();
         const list = [];
 
-        for (let i = 0; i < rows.length; i++) {
-          const c = rows[i].c;
-          if (!c || !c[1]) continue;
-
-          const execName = getCellValue(c[1]).trim();
+        for (let r = 0; r < rowsCount; r++) {
+          const execName = (loginTable.getFormattedValue(r, 1) || loginTable.getValue(r, 1) || "").toString().trim();
           if (!execName || execName === "Executive Name" || execName === "0" || execName === "1") continue;
 
-          const date = getCellValue(c[0]) || "--";
-          const loginTime = getCellValue(c[2]) || "--";
-          const totalLogin = getCellValue(c[3]) || "--";
-          const totalBreak = getCellValue(c[4]) || "--";
-          const netLogin = getCellValue(c[5]) || "00:00:00";
+          const date = loginTable.getFormattedValue(r, 0) || loginTable.getValue(r, 0) || "--";
+          const loginTime = loginTable.getFormattedValue(r, 2) || loginTable.getValue(r, 2) || "--";
+          const totalLogin = loginTable.getFormattedValue(r, 3) || loginTable.getValue(r, 3) || "--";
+          const totalBreak = loginTable.getFormattedValue(r, 4) || loginTable.getValue(r, 4) || "--";
+          const netLogin = (loginTable.getFormattedValue(r, 5) || loginTable.getValue(r, 5) || "00:00:00").toString();
 
           const profile = fboProfilesMap[execName.toLowerCase()] || { mentor: "--", workingType: "Full-Time" };
           const isPt = profile.workingType.toLowerCase().includes("part");
@@ -363,12 +363,12 @@
           const badge = resolveStatus(netSec, isPt);
 
           list.push({
-            date,
+            date: date.toString(),
             name: execName,
-            loginTime,
-            totalLogin,
-            totalBreak,
-            netLogin,
+            loginTime: loginTime.toString(),
+            totalLogin: totalLogin.toString(),
+            totalBreak: totalBreak.toString(),
+            netLogin: netLogin,
             mentor: profile.mentor,
             workingType: isPt ? "Part-Time" : "Full-Time",
             badge,
@@ -387,7 +387,7 @@
           return;
         }
 
-        if (list[0].date !== "--") {
+        if (list[0].date && list[0].date !== "--") {
           document.getElementById('sessionDateLabel').innerText = `Shift Date: ${list[0].date}`;
         }
 
@@ -396,13 +396,9 @@
 
       } catch (err) {
         document.getElementById('syncStatus').innerText = "Sync failed";
+        document.getElementById('portalContainer').innerHTML = `<div class="state-message">Connection error. Please check sheet Share permission is set to Anyone with link.</div>`;
         console.error(err);
       }
-    };
-
-    function getCellValue(cell) {
-      if (!cell) return "";
-      return cell.f ? cell.f : (cell.v !== null && cell.v !== undefined ? cell.v.toString() : "");
     }
 
     function timeToSeconds(timeStr) {
@@ -522,8 +518,8 @@
       renderCards(filtered);
     }
 
-    setInterval(triggerSync, 60000);
-    window.onload = triggerSync;
+    // Auto-refresh every 60s
+    setInterval(fetchAllData, 60000);
   </script>
 </body>
 </html>
