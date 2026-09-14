@@ -106,9 +106,9 @@
       align-items: center;
       gap: 5px;
       backdrop-filter: blur(4px);
-      transition: opacity 0.2s;
+      transition: opacity 0.2s, transform 0.1s;
     }
-    .btn-action:active { opacity: 0.7; }
+    .btn-action:active { opacity: 0.7; transform: scale(0.96); }
 
     .header-heading-title {
       font-size: 20px;
@@ -160,6 +160,7 @@
       padding: 14px;
       margin-bottom: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: transform 0.15s ease;
     }
 
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
@@ -225,7 +226,7 @@
     .hero-value { font-size: 18px; font-weight: 800; color: var(--hero-value); font-family: 'JetBrains Mono', monospace; }
 
     .progress-bar-wrap { background: var(--surface-sub); height: 6px; border-radius: 99px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; transition: width 0.4s ease; }
 
     .app-footer {
       text-align: center;
@@ -251,7 +252,7 @@
         <div class="header-actions">
           <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
           <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="startFreshFetch()" title="Sync">↻ Sync</button>
+          <button class="btn-action" onclick="triggerFastSync()" title="Sync">↻ Sync</button>
         </div>
       </div>
 
@@ -294,7 +295,11 @@
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
+    const SESSION_STORE_KEY = "tara_telemetry_last_state";
+
     let workforceDataset = [];
+    let isRequestUnderway = false;
+    let retryAttempt = 0;
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -322,6 +327,22 @@
       if (!name) return 'EX';
       const parts = name.trim().split(' ').filter(Boolean);
       return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
+    }
+
+    // Instant zero-lag cache paint on page load/pull-to-refresh
+    function paintFromPreviousSession() {
+      try {
+        const cached = sessionStorage.getItem(SESSION_STORE_KEY);
+        if (cached) {
+          const payload = JSON.parse(cached);
+          if (payload && payload.data && payload.data.length > 0) {
+            workforceDataset = payload.data;
+            if (payload.shiftDate) document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
+            document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
+            updateDashboard(workforceDataset);
+          }
+        }
+      } catch (e) {}
     }
 
     function updateDashboard(data) {
@@ -405,22 +426,38 @@
       renderCards(filtered);
     }
 
-    // Chrome Mobile Bypass: Clean Script Loader with Self-Destroying Nonce
-    function startFreshFetch() {
+    // High-Resilience Fetch Engine with Smart Auto-Retries
+    function triggerFastSync() {
+      if (isRequestUnderway) return;
+      isRequestUnderway = true;
       document.getElementById('syncStatus').innerText = "Syncing...";
 
-      const oldTags = document.querySelectorAll('.tara-telemetry-tag');
-      oldTags.forEach(t => t.remove());
+      const cleanTimestamp = Date.now();
+      const cbName = `tara_sync_${cleanTimestamp}_${Math.floor(Math.random() * 1000)}`;
 
-      const dynamicCallback = `tara_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      let requestResolved = false;
 
-      window[dynamicCallback] = function(payload) {
-        delete window[dynamicCallback];
-        const scriptEl = document.getElementById(dynamicCallback);
-        if (scriptEl) scriptEl.remove();
+      const fallbackTimer = setTimeout(() => {
+        if (!requestResolved) {
+          requestResolved = true;
+          isRequestUnderway = false;
+          cleanup(cbName);
+          handleNetworkFailure();
+        }
+      }, 5000);
+
+      window[cbName] = function(payload) {
+        if (requestResolved) return;
+        requestResolved = true;
+        clearTimeout(fallbackTimer);
+        isRequestUnderway = false;
+        retryAttempt = 0;
+        cleanup(cbName);
 
         if (payload && payload.data) {
           workforceDataset = payload.data;
+          try { sessionStorage.setItem(SESSION_STORE_KEY, JSON.stringify(payload)); } catch(e) {}
+          
           document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
           if (payload.shiftDate) {
             document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
@@ -430,24 +467,48 @@
       };
 
       const script = document.createElement('script');
-      script.id = dynamicCallback;
-      script.className = 'tara-telemetry-tag';
+      script.id = cbName;
       script.type = 'text/javascript';
-      script.src = `${WEB_APP_URL}?callback=${dynamicCallback}&_rand=${Math.random()}`;
-      
+      script.async = true;
+      script.src = `${WEB_APP_URL}?callback=${cbName}&_z=${cleanTimestamp}`;
+
       script.onerror = function() {
-        delete window[dynamicCallback];
-        script.remove();
-        if (workforceDataset.length === 0) {
-          document.getElementById('syncStatus').innerText = "Sync Failed";
+        if (!requestResolved) {
+          requestResolved = true;
+          clearTimeout(fallbackTimer);
+          isRequestUnderway = false;
+          cleanup(cbName);
+          handleNetworkFailure();
         }
       };
 
-      document.documentElement.appendChild(script);
+      document.head.appendChild(script);
     }
 
-    // Single trigger on load
-    window.addEventListener('load', startFreshFetch);
+    function cleanup(callbackName) {
+      try { delete window[callbackName]; } catch (e) {}
+      const node = document.getElementById(callbackName);
+      if (node && node.parentNode) node.parentNode.removeChild(node);
+    }
+
+    function handleNetworkFailure() {
+      if (retryAttempt < 2) {
+        retryAttempt++;
+        setTimeout(triggerFastSync, 400 * retryAttempt);
+      } else {
+        retryAttempt = 0;
+        if (workforceDataset.length > 0) {
+          document.getElementById('syncStatus').innerText = "Live (Cached)";
+        } else {
+          document.getElementById('syncStatus').innerText = "Sync Failed";
+        }
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      paintFromPreviousSession();
+      triggerFastSync();
+    });
   </script>
 </body>
 </html>
