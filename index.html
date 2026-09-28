@@ -1,514 +1,538 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Today's Live Login Dashboard</title>
-
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <style>
-    :root {
-      --bg: #070a12;
-      --surface: #0f172a;
-      --surface-sub: #1e293b;
-      --border: rgba(255, 255, 255, 0.08);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #3b82f6;
-      --header-bg: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
-      --hero-bg: linear-gradient(180deg, rgba(6, 78, 59, 0.5) 0%, rgba(2, 44, 34, 0.75) 100%);
-      --hero-border: rgba(16, 185, 129, 0.45);
-      --hero-label: #34d399;
-      --hero-value: #ecfdf5;
-    }
-
-    [data-theme="light"] {
-      --bg: #f1f5f9;
-      --surface: #ffffff;
-      --surface-sub: #f8fafc;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --accent: #2563eb;
-      --header-bg: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-      --hero-bg: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
-      --hero-border: #86efac;
-      --hero-label: #166534;
-      --hero-value: #14532d;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 600px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
-
-    .master-header {
-      background: var(--header-bg);
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-    }
-
-    .header-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .live-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 4px 10px;
-      border-radius: 99px;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(4px);
-    }
-
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: #22c55e;
-      border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .btn-action {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #ffffff;
-      padding: 6px 11px;
-      border-radius: 9px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      backdrop-filter: blur(4px);
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    .btn-action:active { opacity: 0.7; transform: scale(0.96); }
-
-    .header-heading-title {
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      line-height: 1.15;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    .header-info-strip {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.25);
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-size: 11px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      font-weight: 600;
-    }
-
-    .shift-tag { color: #93c5fd; }
-    .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
-
-    .search-wrapper { position: relative; margin-bottom: 12px; }
-    .search-input {
-      width: 100%;
-      padding: 12px 16px 12px 38px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 13px;
-      color: var(--text);
-      outline: none;
-    }
-    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
-
-    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-    .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
-    .kpi-value { font-size: 18px; font-weight: 800; color: var(--text); font-family: 'JetBrains Mono', monospace; }
-    .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
-
-    .agent-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      transition: transform 0.15s ease;
-    }
-
-    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
-    .executive-info { display: flex; align-items: center; gap: 10px; }
-    .avatar-badge {
-      width: 38px;
-      height: 38px;
-      background: var(--surface-sub);
-      color: var(--accent);
-      font-weight: 800;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 10px;
-      flex-shrink: 0;
-      border: 1px solid var(--border);
-    }
-    
-    .executive-name { font-size: 14px; font-weight: 700; color: var(--text); }
-    
-    .meta-tags { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-    .tag-type { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .tag-pt { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .tag-ft { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .tag-mentor { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-
-    .badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-align: right; white-space: nowrap; }
-    .badge-excellent { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-fullday { background: rgba(20, 184, 166, 0.15); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.3); }
-    .badge-halfday { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-progress { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .badge-pending { background: rgba(249, 115, 22, 0.15); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.3); }
-    .badge-absent { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-
-    .metrics-container { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px; margin-bottom: 12px; }
-    
-    .sub-metrics-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--surface-sub);
-      padding: 6px 9px;
-      border-radius: 6px;
-      font-size: 11px;
-    }
-    .metric-title { color: var(--text-muted); font-weight: 500; }
-    .metric-data { font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-
-    .hero-net-metric {
-      background: var(--hero-bg);
-      border: 1.5px solid var(--hero-border);
-      border-radius: 10px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
-    .hero-label { font-size: 9px; font-weight: 800; color: var(--hero-label); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-    .hero-value { font-size: 18px; font-weight: 800; color: var(--hero-value); font-family: 'JetBrains Mono', monospace; }
-
-    .progress-bar-wrap { background: var(--surface-sub); height: 6px; border-radius: 99px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; transition: width 0.4s ease; }
-
-    .app-footer {
-      text-align: center;
-      padding: 18px 8px 24px 8px;
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-
-    .state-message { text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TARA Enterprise Portal | Download index.html</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .glow-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
 </head>
-<body>
+<body class="bg-[#050811] text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 antialiased selection:bg-blue-600 selection:text-white">
 
-  <div id="captureArea">
-    <header class="master-header">
-      <div class="header-top-row">
-        <div class="live-badge">
-          <span class="pulse-dot"></span>
-          <span>LIVE TELEMETRY</span>
-        </div>
-        <div class="header-actions">
-          <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
-          <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-          <button class="btn-action" onclick="triggerFastSync()" title="Sync">↻ Sync</button>
-        </div>
-      </div>
+    <div class="w-full max-w-4xl space-y-6">
 
-      <div class="header-heading-title">TODAY'S LIVE LOGIN</div>
+        <!-- Top Header & Status -->
+        <div class="glow-card p-6 sm:p-8 rounded-3xl border border-slate-800 relative overflow-hidden shadow-2xl">
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-orange-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="header-info-strip">
-        <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-        <span class="sync-timestamp" id="syncStatus">Syncing...</span>
-      </div>
-    </header>
-
-    <div class="search-wrapper">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" class="search-input" placeholder="Search by executive or mentor..." oninput="filterPortalData()">
-    </div>
-
-    <div class="kpi-row" id="kpiBar" style="display: none;">
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiTotal">0</div>
-        <div class="kpi-label">Active Team</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiCompleted" style="color: #34d399;">0</div>
-        <div class="kpi-label">Target Met</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value" id="kpiInProgress" style="color: #60a5fa;">0</div>
-        <div class="kpi-label">In Shift</div>
-      </div>
-    </div>
-
-    <main id="portalContainer">
-      <div class="state-message">Synchronizing workforce login records...</div>
-    </main>
-
-    <footer class="app-footer">
-      Powered by TARA Talent Solutions
-    </footer>
-  </div>
-
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
-    const SESSION_STORE_KEY = "tara_telemetry_last_state";
-
-    let workforceDataset = [];
-    let isRequestUnderway = false;
-    let retryAttempt = 0;
-
-    function toggleTheme() {
-      const html = document.documentElement;
-      const current = html.getAttribute('data-theme');
-      const target = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', target);
-      document.getElementById('themeBtn').innerText = target === 'dark' ? '☀️' : '🌙';
-    }
-
-    function captureScreen() {
-      const target = document.getElementById('captureArea');
-      html2canvas(target, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `Live_Login_Status_${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
-    }
-
-    function getInitials(name) {
-      if (!name) return 'EX';
-      const parts = name.trim().split(' ').filter(Boolean);
-      return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
-    }
-
-    // Instant zero-lag cache paint on page load/pull-to-refresh
-    function paintFromPreviousSession() {
-      try {
-        const cached = sessionStorage.getItem(SESSION_STORE_KEY);
-        if (cached) {
-          const payload = JSON.parse(cached);
-          if (payload && payload.data && payload.data.length > 0) {
-            workforceDataset = payload.data;
-            if (payload.shiftDate) document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
-            document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
-            updateDashboard(workforceDataset);
-          }
-        }
-      } catch (e) {}
-    }
-
-    function updateDashboard(data) {
-      const container = document.getElementById('portalContainer');
-      if (!data || data.length === 0) {
-        document.getElementById('kpiBar').style.display = 'none';
-        container.innerHTML = '<div class="state-message">No active login records found.</div>';
-        return;
-      }
-
-      document.getElementById('kpiBar').style.display = 'grid';
-      document.getElementById('kpiTotal').innerText = data.length;
-      const completed = data.filter(d => d.isMet).length;
-      document.getElementById('kpiCompleted').innerText = completed;
-      document.getElementById('kpiInProgress').innerText = data.length - completed;
-
-      renderCards(data);
-    }
-
-    function renderCards(dataList) {
-      const container = document.getElementById('portalContainer');
-      container.innerHTML = '';
-
-      dataList.forEach(item => {
-        const initials = getInitials(item.name);
-        const isPt = item.workingType === "Part-Time";
-
-        const card = document.createElement('div');
-        card.className = 'agent-card';
-        card.innerHTML = `
-          <div class="card-header">
-            <div class="executive-info">
-              <div class="avatar-badge">${initials}</div>
-              <div>
-                <div class="executive-name">${item.name}</div>
-                <div class="meta-tags">
-                  <span class="tag-type ${isPt ? 'tag-pt' : 'tag-ft'}">${item.workingType}</span>
-                  <span class="tag-mentor">• ${item.mentor}</span>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+                <div class="space-y-1.5">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        Production Artifact Ready
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">TARA Enterprise Portal</h1>
+                    <p class="text-xs sm:text-sm text-slate-400 max-w-xl">
+                        Single-file <code class="text-blue-400 font-mono">index.html</code> with integrated Attendance Strike engine, Performance Flag system, Sunday-skipping Fire Streak (🔥), and Live Telemetry.
+                    </p>
                 </div>
-              </div>
+
+                <!-- Action Download Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="downloadIndexFile()" class="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-[0.98] transition-all font-bold text-sm text-white rounded-2xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2.5">
+                        <i class="fa-solid fa-download text-base"></i>
+                        <span>Download index.html</span>
+                    </button>
+                    <button onclick="copyRawCode()" id="copyBtn" class="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 active:scale-[0.98] transition-all font-semibold text-sm text-slate-200 rounded-2xl flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-copy text-sm" id="copyIcon"></i>
+                        <span id="copyLabel">Copy Raw Code</span>
+                    </button>
+                </div>
             </div>
-            <div class="badge ${item.badgeClass}">${item.badge}</div>
-          </div>
-          
-          <div class="metrics-container">
-            <div class="sub-metrics-grid">
-              <div class="metric-row">
-                <span class="metric-title">Login</span>
-                <span class="metric-data">${item.loginTime}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-title">Gross</span>
-                <span class="metric-data">${item.totalLogin}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-title">Break</span>
-                <span class="metric-data">${item.totalBreak}</span>
-              </div>
+
+            <!-- Features Summary Badges -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 mt-6 border-t border-slate-800/80 text-xs text-slate-300">
+                <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/70">
+                    <span class="text-amber-400 font-bold block mb-0.5"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Strikes</span>
+                    <span class="text-[11px] text-slate-400">Attendance & Login</span>
+                </div>
+                <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/70">
+                    <span class="text-rose-400 font-bold block mb-0.5"><i class="fa-solid fa-flag mr-1"></i> Flags</span>
+                    <span class="text-[11px] text-slate-400">Funnel & Quality</span>
+                </div>
+                <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/70">
+                    <span class="text-orange-400 font-bold block mb-0.5">🔥 Streak</span>
+                    <span class="text-[11px] text-slate-400">Sunday Free Days</span>
+                </div>
+                <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/70">
+                    <span class="text-emerald-400 font-bold block mb-0.5"><i class="fa-solid fa-bolt mr-1"></i> Fast API</span>
+                    <span class="text-[11px] text-slate-400">Batch-read memory</span>
+                </div>
             </div>
+        </div>
+
+        <div class="glow-card p-6 rounded-3xl border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <i class="fa-regular fa-file-code text-blue-400 text-sm"></i>
+                    <span>Source Code Inspector (index.html)</span>
+                </div>
+                <span class="text-[11px] font-mono text-slate-500" id="fileStats">Loading code stats...</span>
+            </div>
+
+            <!-- Scrollable Code Box -->
+            <div class="relative">
+                <textarea id="rawSourceCode" readonly class="w-full h-80 bg-slate-950/90 font-mono text-xs text-slate-300 p-4 rounded-2xl border border-slate-800/90 focus:outline-none resize-none leading-relaxed selection:bg-blue-600"></textarea>
+            </div>
+
+            <!-- GitHub Instructions -->
+            <div class="bg-blue-950/20 border border-blue-500/20 p-4 rounded-2xl text-xs text-slate-300 space-y-1.5">
+                <p class="font-bold text-blue-400 flex items-center gap-1.5">
+                    <i class="fa-brands fa-github text-sm"></i> How to apply in your GitHub Repository:
+                </p>
+                <ol class="list-decimal list-inside space-y-1 text-slate-400 text-[11px] pl-1">
+                    <li>Click <strong>Download index.html</strong> above to save the file to your computer.</li>
+                    <li>Go to your GitHub repo (<code class="text-slate-200">tara-enterprise-portal-AAP</code>).</li>
+                    <li>Click <strong>Add file &gt; Upload files</strong>, drag the downloaded <code class="text-slate-200">index.html</code>, and click <strong>Commit changes</strong>.</li>
+                    <li>Your portal will be live immediately without any broken UI!</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Toast Feedback Notice -->
+        <div id="toast" class="fixed bottom-6 right-6 hidden bg-emerald-500 text-slate-950 font-bold text-xs px-4 py-3 rounded-xl shadow-2xl items-center gap-2 transition-all">
+            <i class="fa-solid fa-check-circle"></i>
+            <span id="toastMsg">File downloaded successfully!</span>
+        </div>
+
+    </div>
+
+    <script>
+        // Exact unified index.html source code for TARA Enterprise Portal
+        const FINAL_INDEX_HTML_CONTENT = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TARA Enterprise Portal | Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-[#070a12] text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- ================= LOGIN SCREEN ================= -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#070a12]/95 backdrop-blur-xl p-4">
+        <div class="glass-card p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-800 relative overflow-hidden">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-2xl shadow-xl shadow-blue-500/20 mb-3">T</div>
+                <h1 class="text-xl font-bold tracking-tight text-white">TARA TALENT SOLUTIONS</h1>
+                <p class="text-xs text-slate-400 mt-1 uppercase tracking-wider">Enterprise FBO Portal</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email ID</label>
+                    <input type="email" id="loginEmail" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-slate-200" placeholder="your-email@gmail.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+                    <input type="password" id="loginPass" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-slate-200" placeholder="••••••••">
+                </div>
+                <button type="submit" id="loginBtn" class="w-full mt-2 bg-blue-600 hover:bg-blue-500 transition-all font-semibold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-600/30">
+                    Sign In to Workspace
+                </button>
+                <p id="loginError" class="text-xs text-rose-400 text-center hidden font-medium pt-2"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MAIN UNIFIED HUB ================= -->
+    <div id="appContainer" class="hidden flex-1 flex flex-col min-h-screen">
+        
+        <!-- TOP STICKY APP BAR & SWITCHER -->
+        <header class="bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 py-3 sticky top-0 z-40 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center font-black text-sm">T</div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span id="navFboName" class="font-bold text-sm text-white">Loading...</span>
+                        <!-- MOTIVATIONAL FIRE STREAK BADGE -->
+                        <span id="streakBadge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 text-orange-400">
+                            🔥 <span id="valStreakTop">0</span> Days
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Switch Tabs -->
+            <nav class="flex items-center space-x-1 bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
+                <button onclick="switchView('profile')" id="tab-profile" class="px-3 py-1.5 rounded-lg transition bg-blue-600 text-white shadow">Profile</button>
+                <button onclick="switchView('loginview')" id="tab-loginview" class="px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">Live Login</button>
+                <button onclick="switchView('crm')" id="tab-crm" class="px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">CRM</button>
+            </nav>
+
+            <button onclick="handleLogout()" class="text-xs font-semibold px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </header>
+
+        <!-- VIEW 1: FBO ACCOUNTABILITY PROFILE (Strikes & Flags) -->
+        <main id="view-profile" class="flex-1 p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-6">
             
-            <div class="hero-net-metric">
-              <span class="hero-label">Net Production</span>
-              <span class="hero-value">${item.netLogin}</span>
+            <!-- STREAK BANNER -->
+            <div class="glass-card p-5 rounded-3xl border border-orange-500/20 bg-gradient-to-r from-orange-950/20 via-slate-900 to-slate-900 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-2xl">🔥</div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-2xl font-black text-orange-400 font-mono" id="valStreakMain">0</span>
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-orange-300">Days Continuous Discipline</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Sundays excluded. Keep your momentum high!</p>
+                    </div>
+                </div>
+                <div id="dynamicThemeTag" class="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    Compliant Standing
+                </div>
             </div>
-          </div>
 
-          <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width: ${item.progressPct}%;"></div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
+            <!-- TWO INDEPENDENT SYSTEMS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    function filterPortalData() {
-      const q = document.getElementById('searchInput').value.toLowerCase().trim();
-      const filtered = workforceDataset.filter(item => 
-        item.name.toLowerCase().includes(q) || 
-        (item.mentor && item.mentor.toLowerCase().includes(q))
-      );
-      renderCards(filtered);
-    }
+                <!-- 1. ATTENDANCE STRIKE SYSTEM -->
+                <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-user-clock text-amber-400"></i>
+                            <h3 class="font-bold text-sm text-white">Attendance Strike Engine</h3>
+                        </div>
+                        <span class="text-[10px] text-slate-400">Login Discipline Only</span>
+                    </div>
 
-    // High-Resilience Fetch Engine with Smart Auto-Retries
-    function triggerFastSync() {
-      if (isRequestUnderway) return;
-      isRequestUnderway = true;
-      document.getElementById('syncStatus').innerText = "Syncing...";
+                    <div class="flex items-baseline justify-between">
+                        <div>
+                            <span class="text-[11px] font-semibold uppercase text-slate-400">Active Strikes</span>
+                            <div class="flex items-baseline space-x-1.5 mt-1">
+                                <span class="text-4xl font-black text-amber-400 font-mono" id="valStrikes">0</span>
+                                <span class="text-xs text-slate-500">/ 4 max</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[11px] font-semibold uppercase text-slate-400">Status</span>
+                            <p class="text-sm font-bold text-white mt-1" id="valStrikeStatus">Good Standing</p>
+                        </div>
+                    </div>
 
-      const cleanTimestamp = Date.now();
-      const cbName = `tara_sync_${cleanTimestamp}_${Math.floor(Math.random() * 1000)}`;
+                    <!-- 4-Level Strike Bar -->
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <div id="sBar1" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                        <div id="sBar2" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                        <div id="sBar3" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                        <div id="sBar4" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                    </div>
 
-      let requestResolved = false;
+                    <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 text-xs space-y-2">
+                        <div class="flex justify-between text-slate-400">
+                            <span>Consistent Weeks (Recovery):</span>
+                            <span class="text-white font-bold"><span id="valConsistent">0</span> / 3</span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Under Watch Count:</span>
+                            <span class="text-amber-400 font-bold" id="valUnderWatch">0</span>
+                        </div>
+                    </div>
+                </div>
 
-      const fallbackTimer = setTimeout(() => {
-        if (!requestResolved) {
-          requestResolved = true;
-          isRequestUnderway = false;
-          cleanup(cbName);
-          handleNetworkFailure();
+                <!-- 2. PERFORMANCE FLAG SYSTEM -->
+                <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-chart-line text-blue-400"></i>
+                            <h3 class="font-bold text-sm text-white">Performance Flag Engine</h3>
+                        </div>
+                        <span class="text-[10px] text-slate-400">Work Quality & Conversions</span>
+                    </div>
+
+                    <div class="flex items-baseline justify-between">
+                        <div>
+                            <span class="text-[11px] font-semibold uppercase text-slate-400">Cumulative Flags</span>
+                            <div class="flex items-baseline space-x-1.5 mt-1">
+                                <span class="text-4xl font-black text-rose-500 font-mono" id="valFlags">0</span>
+                                <span class="text-xs text-slate-500">/ 4 max</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[11px] font-semibold uppercase text-slate-400">Governance</span>
+                            <p class="text-sm font-bold text-white mt-1" id="valFlagStatus">Active / Normal</p>
+                        </div>
+                    </div>
+
+                    <!-- 4-Level Flag Bar -->
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <div id="fBar1" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                        <div id="fBar2" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                        <div id="fBar3" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                        <div id="fBar4" class="h-2 rounded-full bg-slate-800 transition-colors"></div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 text-xs space-y-2">
+                        <div class="flex justify-between text-slate-400">
+                            <span>Weekly Score Band:</span>
+                            <span class="text-blue-400 font-bold" id="valPerfRating">Good Performance</span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Recovery Rule:</span>
+                            <span class="text-slate-300">3 &times; Good = 1 Flag Removed</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- VIEW 2: TODAY'S LIVE LOGIN VIEW (Personalized Telemetry) -->
+        <main id="view-loginview" class="hidden flex-1 p-4 sm:p-6 max-w-xl mx-auto w-full space-y-4">
+            <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Shift Date</span>
+                        <h3 class="text-sm font-bold text-white" id="liveShiftDate">Today</h3>
+                    </div>
+                    <span id="liveStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">Present</span>
+                </div>
+
+                <!-- Big Net Production Hero -->
+                <div class="bg-slate-950 border border-emerald-500/30 rounded-2xl p-4 text-center">
+                    <span class="text-[11px] font-bold uppercase text-emerald-400 tracking-wider">Net Production Time</span>
+                    <p class="text-3xl font-black text-white font-mono mt-1" id="liveNetLogin">00:00:00</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 block mb-1">Total Break</span>
+                        <span class="font-mono text-sm font-bold text-slate-200" id="liveTotalBreak">00:00:00</span>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 block mb-1">Total Gross Login</span>
+                        <span class="font-mono text-sm font-bold text-slate-200" id="liveTotalLogin">00:00:00</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs flex justify-between">
+                    <span class="text-slate-400">Shift Remarks:</span>
+                    <span class="font-semibold text-slate-200" id="liveRemarks">Normal Shift</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- VIEW 3: CRM VIEW -->
+        <main id="view-crm" class="hidden flex-1 relative w-full h-[calc(100vh-60px)]">
+            <iframe src="https://taralearninghubflp.github.io/tara-live-portal/?v=2" class="w-full h-full border-0"></iframe>
+        </main>
+
+    </div>
+
+    <!-- ================= CLIENT JAVASCRIPT ================= -->
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlIyDugTAU-codhmJZ7OH_Q-5RYW6blDidh8uBWw7Nkka6-KcI_5Dr6Qx-cJIkefe2/exec";
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById("loginEmail").value.trim();
+            const pass = document.getElementById("loginPass").value.trim();
+            const btn = document.getElementById("loginBtn");
+            const err = document.getElementById("loginError");
+
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Authenticating...';
+            btn.disabled = true;
+            err.classList.add("hidden");
+
+            fetch(\`\${SCRIPT_URL}?action=login&email=\${encodeURIComponent(email)}&password=\${encodeURIComponent(pass)}\`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        localStorage.setItem("tara_unified_session", JSON.stringify(data));
+                        renderPortal(data);
+                    } else {
+                        err.innerText = data.message || "Invalid credentials.";
+                        err.classList.remove("hidden");
+                        btn.innerHTML = 'Sign In to Workspace';
+                        btn.disabled = false;
+                    }
+                })
+                .catch(() => {
+                    err.innerText = "Connection timeout. Please check your internet.";
+                    err.classList.remove("hidden");
+                    btn.innerHTML = 'Sign In to Workspace';
+                    btn.disabled = false;
+                });
         }
-      }, 5000);
 
-      window[cbName] = function(payload) {
-        if (requestResolved) return;
-        requestResolved = true;
-        clearTimeout(fallbackTimer);
-        isRequestUnderway = false;
-        retryAttempt = 0;
-        cleanup(cbName);
+        function renderPortal(data) {
+            document.getElementById("loginScreen").classList.add("hidden");
+            document.getElementById("appContainer").classList.remove("hidden");
 
-        if (payload && payload.data) {
-          workforceDataset = payload.data;
-          try { sessionStorage.setItem(SESSION_STORE_KEY, JSON.stringify(payload)); } catch(e) {}
-          
-          document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
-          if (payload.shiftDate) {
-            document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
-          }
-          updateDashboard(workforceDataset);
+            const name = data.fboName || "FBO Member";
+            document.getElementById("navFboName").innerText = name;
+            
+            // Streak Telemetry
+            const streak = data.streakCount || 0;
+            document.getElementById("valStreakTop").innerText = streak;
+            document.getElementById("valStreakMain").innerText = streak;
+
+            // Strikes & Flags
+            const strikes = parseInt(data.attendance.strikes) || 0;
+            const flags = parseInt(data.performance.flags) || 0;
+
+            document.getElementById("valStrikes").innerText = strikes;
+            document.getElementById("valStrikeStatus").innerText = data.attendance.status || "Good Standing";
+            document.getElementById("valConsistent").innerText = data.attendance.consistentWeeks || 0;
+            document.getElementById("valUnderWatch").innerText = data.attendance.underWatchCount || 0;
+
+            document.getElementById("valFlags").innerText = flags;
+            document.getElementById("valFlagStatus").innerText = data.performance.status || "Active / Normal";
+            document.getElementById("valPerfRating").innerText = data.performance.currentRating || "Good Performance";
+
+            // Bars update
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById("sBar" + i).className = i <= strikes ? "h-2 rounded-full bg-amber-400" : "h-2 rounded-full bg-slate-800";
+                document.getElementById("fBar" + i).className = i <= flags ? "h-2 rounded-full bg-rose-500" : "h-2 rounded-full bg-slate-800";
+            }
+
+            // Dynamic Theme Accent
+            const themeTag = document.getElementById("dynamicThemeTag");
+            if (strikes >= 3 || flags >= 3) {
+                themeTag.className = "px-3 py-1 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30";
+                themeTag.innerText = "Critical Escalation";
+            } else if (strikes > 0 || flags > 0) {
+                themeTag.className = "px-3 py-1 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30";
+                themeTag.innerText = "Watch Review Active";
+            } else {
+                themeTag.className = "px-3 py-1 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+                themeTag.innerText = "Good Discipline";
+            }
+
+            // Live Login View Data
+            if (data.latestTelemetry) {
+                document.getElementById("liveShiftDate").innerText = data.latestTelemetry.date;
+                document.getElementById("liveNetLogin").innerText = data.latestTelemetry.netLogin;
+                document.getElementById("liveTotalBreak").innerText = data.latestTelemetry.totalBreak;
+                document.getElementById("liveTotalLogin").innerText = data.latestTelemetry.totalLogin;
+                document.getElementById("liveRemarks").innerText = data.latestTelemetry.remarks;
+                
+                const isPres = data.latestTelemetry.status === "Present";
+                document.getElementById("liveStatusBadge").className = isPres ? 
+                    "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400" :
+                    "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 border border-rose-500/30 text-rose-400";
+                document.getElementById("liveStatusBadge").innerText = data.latestTelemetry.status;
+            }
         }
-      };
 
-      const script = document.createElement('script');
-      script.id = cbName;
-      script.type = 'text/javascript';
-      script.async = true;
-      script.src = `${WEB_APP_URL}?callback=${cbName}&_z=${cleanTimestamp}`;
+        function switchView(viewName) {
+            document.getElementById("view-profile").classList.add("hidden");
+            document.getElementById("view-loginview").classList.add("hidden");
+            document.getElementById("view-crm").classList.add("hidden");
 
-      script.onerror = function() {
-        if (!requestResolved) {
-          requestResolved = true;
-          clearTimeout(fallbackTimer);
-          isRequestUnderway = false;
-          cleanup(cbName);
-          handleNetworkFailure();
+            document.getElementById("tab-profile").className = "px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+            document.getElementById("tab-loginview").className = "px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+            document.getElementById("tab-crm").className = "px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+
+            document.getElementById("view-" + viewName).classList.remove("hidden");
+            document.getElementById("tab-" + viewName).className = "px-3 py-1.5 rounded-lg transition bg-blue-600 text-white shadow";
         }
-      };
 
-      document.head.appendChild(script);
-    }
-
-    function cleanup(callbackName) {
-      try { delete window[callbackName]; } catch (e) {}
-      const node = document.getElementById(callbackName);
-      if (node && node.parentNode) node.parentNode.removeChild(node);
-    }
-
-    function handleNetworkFailure() {
-      if (retryAttempt < 2) {
-        retryAttempt++;
-        setTimeout(triggerFastSync, 400 * retryAttempt);
-      } else {
-        retryAttempt = 0;
-        if (workforceDataset.length > 0) {
-          document.getElementById('syncStatus').innerText = "Live (Cached)";
-        } else {
-          document.getElementById('syncStatus').innerText = "Sync Failed";
+        function handleLogout() {
+            localStorage.removeItem("tara_unified_session");
+            location.reload();
         }
-      }
-    }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      paintFromPreviousSession();
-      triggerFastSync();
-    });
-  </script>
+        window.onload = function() {
+            const session = localStorage.getItem("tara_unified_session");
+            if (session) {
+                try {
+                    renderPortal(JSON.parse(session));
+                } catch(e) {
+                    localStorage.removeItem("tara_unified_session");
+                }
+            }
+        };
+    <\/script>
+</body>
+</html>`;
+
+        // Initialize display on window load
+        window.onload = function() {
+            const area = document.getElementById("rawSourceCode");
+            area.value = FINAL_INDEX_HTML_CONTENT;
+            
+            const lines = FINAL_INDEX_HTML_CONTENT.split("\n").length;
+            const sizeKb = (new Blob([FINAL_INDEX_HTML_CONTENT]).size / 1024).toFixed(1);
+            document.getElementById("fileStats").innerText = `${lines} lines • ${sizeKb} KB`;
+        };
+
+        // Instant Download Action
+        function downloadIndexFile() {
+            const blob = new Blob([FINAL_INDEX_HTML_CONTENT], { type: "text/html;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "index.html";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("index.html successfully downloaded!");
+        }
+
+        // Copy Code to Clipboard Action
+        function copyRawCode() {
+            const textarea = document.getElementById("rawSourceCode");
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+
+            try {
+                document.execCommand('copy');
+                const btn = document.getElementById("copyBtn");
+                const icon = document.getElementById("copyIcon");
+                const label = document.getElementById("copyLabel");
+
+                icon.className = "fa-solid fa-check text-emerald-400";
+                label.innerText = "Copied to Clipboard!";
+                btn.className = "px-5 py-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold text-sm rounded-2xl flex items-center justify-center gap-2";
+
+                showToast("Code copied to clipboard!");
+
+                setTimeout(() => {
+                    icon.className = "fa-regular fa-copy text-sm";
+                    label.innerText = "Copy Raw Code";
+                    btn.className = "px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 active:scale-[0.98] transition-all font-semibold text-sm text-slate-200 rounded-2xl flex items-center justify-center gap-2";
+                }, 2500);
+            } catch (err) {
+                showToast("Please use Ctrl+A then Ctrl+C to copy");
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toastMsg").innerText = message;
+            toast.classList.remove("hidden");
+            toast.classList.add("flex");
+            setTimeout(() => {
+                toast.classList.add("hidden");
+                toast.classList.remove("flex");
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
