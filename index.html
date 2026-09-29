@@ -60,7 +60,6 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* Danger Slots for Governance */
     .penalty-slot {
       height: 8px;
       border-radius: 4px;
@@ -109,7 +108,6 @@
   <!-- ================= AUTHENTICATION MODAL ================= -->
   <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06090F]/95 backdrop-blur-md p-4 transition-all duration-300">
     <div class="corporate-card p-8 w-full max-w-sm relative overflow-hidden">
-      <!-- Top Cyber Line -->
       <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
       
       <div class="text-center mb-8 mt-2">
@@ -191,7 +189,6 @@
 
       <!-- Main Telemetry Card -->
       <div class="corporate-card p-5 relative overflow-hidden">
-        <!-- Left indicator line -->
         <div class="absolute top-0 left-0 w-1 h-full bg-blue-500" id="statusLine"></div>
         
         <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-4 ml-2">
@@ -206,7 +203,6 @@
           <span class="text-[10px] font-bold uppercase text-gray-500 tracking-widest block mb-1">Net Production</span>
           <p class="text-4xl font-black text-white font-mono tracking-tight drop-shadow-md" id="liveNet">00:00:00</p>
           
-          <!-- Progress Bar with accurate numbers underneath -->
           <div class="mt-4 w-full bg-[#1A2234] h-1.5 rounded-full overflow-hidden border border-[#26314A]">
             <div id="liveProgress" class="bg-blue-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(59,130,246,0.6)]" style="width: 0%;"></div>
           </div>
@@ -241,7 +237,7 @@
         <h3 class="font-bold text-gray-400 uppercase tracking-widest text-[10px]">Policy Compliance & Risk</h3>
       </div>
 
-      <!-- 1. STRIKE ENGINE (Serious Penalty UI) -->
+      <!-- 1. STRIKE ENGINE -->
       <div class="corporate-card p-5 border border-red-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A0B0B]/60 shadow-[0_4px_15px_rgba(239,68,68,0.05)]">
         <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-3">
           <div class="flex items-center space-x-2 text-red-500">
@@ -265,7 +261,6 @@
           </div>
         </div>
 
-        <!-- Danger Slots for Strikes -->
         <div class="grid grid-cols-4 gap-2 mb-4">
           <div id="sb1" class="penalty-slot"></div>
           <div id="sb2" class="penalty-slot"></div>
@@ -279,7 +274,7 @@
         </div>
       </div>
 
-      <!-- 2. FLAG ENGINE (Serious Penalty UI) -->
+      <!-- 2. FLAG ENGINE -->
       <div class="corporate-card p-5 border border-orange-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A120B]/60 shadow-[0_4px_15px_rgba(245,158,11,0.05)]">
         <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-3">
           <div class="flex items-center space-x-2 text-orange-500">
@@ -303,7 +298,6 @@
           </div>
         </div>
 
-        <!-- Danger Slots for Flags -->
         <div class="grid grid-cols-4 gap-2 mb-4">
           <div id="fb1" class="penalty-slot"></div>
           <div id="fb2" class="penalty-slot"></div>
@@ -337,11 +331,19 @@
     const APP_URL = "https://script.google.com/macros/s/AKfycbwlIyDugTAU-codhmJZ7OH_Q-5RYW6blDidh8uBWw7Nkka6-KcI_5Dr6Qx-cJIkefe2/exec";
 
     function playSuccessSound() {
-        try {
-            const audio = new Audio('https://actions.google.com/sounds/v1/ui/proxima.ogg');
-            audio.volume = 0.6;
-            audio.play();
-        } catch(e) {}
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.6);
+      } catch(e) {}
     }
 
     function handleAuthSubmit(e) {
@@ -361,7 +363,7 @@
         
         if (res && res.status === "success") {
           playSuccessSound();
-          localStorage.setItem("tara_corp_session", JSON.stringify({ email: email, pass: pass, payload: res }));
+          sessionStorage.setItem("tara_corp_session", JSON.stringify({ email: email, pass: pass, payload: res }));
           renderPortal(res);
         } else {
           err.innerText = (res && res.message) ? res.message : "Access Denied.";
@@ -370,7 +372,6 @@
       });
     }
 
-    // Ultra-Fast JSONP Fetch with 15s extended timeout to prevent any timeout issues
     function fetchDataDirect(email, pass, cb) {
       let resolved = false;
       const targetUrl = `${APP_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`;
@@ -395,11 +396,10 @@
       };
       document.head.appendChild(s);
       
-      // Increased timeout to 15 seconds to completely eliminate timeout issues on mobile/slow connection
       setTimeout(()=>{ 
         if(!resolved) { 
           resolved=true; 
-          cb({status:"error", message:"Request timed out. Please check your internet or retry."}); 
+          cb({status:"error", message:"Request timed out. Please check your network."}); 
         } 
       }, 15000);
     }
@@ -520,7 +520,7 @@
     }
 
     function syncData() {
-      const sess = JSON.parse(localStorage.getItem("tara_corp_session") || "{}");
+      const sess = JSON.parse(sessionStorage.getItem("tara_corp_session") || "{}");
       if (!sess.email) return;
 
       const icon = document.getElementById("syncIcon");
@@ -531,19 +531,19 @@
         if (res && res.status === "success") {
           playSuccessSound();
           sess.payload = res;
-          localStorage.setItem("tara_corp_session", JSON.stringify(sess));
+          sessionStorage.setItem("tara_corp_session", JSON.stringify(sess));
           renderPortal(res);
         }
       });
     }
 
     function logout() {
-      localStorage.removeItem("tara_corp_session");
+      sessionStorage.removeItem("tara_corp_session");
       location.reload();
     }
 
     window.onload = function() {
-      const sess = JSON.parse(localStorage.getItem("tara_corp_session") || "{}");
+      const sess = JSON.parse(sessionStorage.getItem("tara_corp_session") || "{}");
       if (sess && sess.payload) {
         renderPortal(sess.payload);
       }
