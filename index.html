@@ -1,1027 +1,553 @@
-, <!DOCTYPE html>
-
-<html lang="en" data-theme="dark">
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-  <title>Today's Live Login Dashboard</title>
-
-
-
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-
-  <meta http-equiv="Pragma" content="no-cache">
-
-  <meta http-equiv="Expires" content="0">
-
-
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-
-
+  <title>TARA FBO Enterprise Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;800&display=swap');
+    
     :root {
-
-      --bg: #070a12;
-
-      --surface: #0f172a;
-
-      --surface-sub: #1e293b;
-
-      --border: rgba(255, 255, 255, 0.08);
-
-      --text: #f8fafc;
-
-      --text-muted: #94a3b8;
-
-      --accent: #3b82f6;
-
-      --header-bg: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
-
-      --hero-bg: linear-gradient(180deg, rgba(6, 78, 59, 0.5) 0%, rgba(2, 44, 34, 0.75) 100%);
-
-      --hero-border: rgba(16, 185, 129, 0.45);
-
-      --hero-label: #34d399;
-
-      --hero-value: #ecfdf5;
-
+      --bg-main: #06090F;
+      --bg-card: #0F1523;
+      --bg-input: #1A2234;
+      --border-color: #26314A;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --accent-blue: #3B82F6;
+      --danger-red: #EF4444;
+      --warning-orange: #F59E0B;
+      --success-green: #10B981;
     }
 
-
-
-    [data-theme="light"] {
-
-      --bg: #f1f5f9;
-
-      --surface: #ffffff;
-
-      --surface-sub: #f8fafc;
-
-      --border: #e2e8f0;
-
-      --text: #0f172a;
-
-      --text-muted: #64748b;
-
-      --accent: #2563eb;
-
-      --header-bg: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-
-      --hero-bg: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
-
-      --hero-border: #86efac;
-
-      --hero-label: #166534;
-
-      --hero-value: #14532d;
-
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      -webkit-tap-highlight-color: transparent; 
+      user-select: none; 
     }
-
-
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-
-    body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 600px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
-
-
-
-    .master-header {
-
-      background: var(--header-bg);
-
-      border-radius: 18px;
-
-      padding: 18px;
-
-      margin-bottom: 12px;
-
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-
-      border: 1px solid rgba(255, 255, 255, 0.12);
-
-      color: #ffffff;
-
-    }
-
-
-
-    .header-top-row {
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      margin-bottom: 14px;
-
-    }
-
-
-
-    .live-badge {
-
-      display: inline-flex;
-
-      align-items: center;
-
-      gap: 6px;
-
-      background: rgba(0, 0, 0, 0.3);
-
-      padding: 4px 10px;
-
-      border-radius: 99px;
-
-      font-size: 11px;
-
-      font-weight: 800;
-
-      letter-spacing: 0.05em;
-
-      border: 1px solid rgba(255, 255, 255, 0.15);
-
-      backdrop-filter: blur(4px);
-
-    }
-
-
-
-    .pulse-dot {
-
-      width: 8px;
-
-      height: 8px;
-
-      background: #22c55e;
-
-      border-radius: 50%;
-
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
-
-    }
-
-
-
-    .header-actions {
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 6px;
-
-    }
-
-
-
-    .btn-action {
-
-      background: rgba(255, 255, 255, 0.12);
-
-      border: 1px solid rgba(255, 255, 255, 0.2);
-
-      color: #ffffff;
-
-      padding: 6px 11px;
-
-      border-radius: 9px;
-
-      font-size: 11px;
-
-      font-weight: 700;
-
-      cursor: pointer;
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 5px;
-
-      backdrop-filter: blur(4px);
-
-      transition: opacity 0.2s, transform 0.1s;
-
-    }
-
-    .btn-action:active { opacity: 0.7; transform: scale(0.96); }
-
-
-
-    .header-heading-title {
-
-      font-size: 20px;
-
-      font-weight: 900;
-
-      letter-spacing: -0.03em;
-
-      line-height: 1.15;
-
-      text-transform: uppercase;
-
-      margin-bottom: 12px;
-
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-
-    }
-
-
-
-    .header-info-strip {
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      background: rgba(0, 0, 0, 0.25);
-
-      padding: 8px 12px;
-
-      border-radius: 10px;
-
-      font-size: 11px;
-
-      border: 1px solid rgba(255, 255, 255, 0.08);
-
-      font-weight: 600;
-
-    }
-
-
-
-    .shift-tag { color: #93c5fd; }
-
-    .sync-timestamp { color: #e2e8f0; font-feature-settings: "tnum"; }
-
-
-
-    .search-wrapper { position: relative; margin-bottom: 12px; }
-
-    .search-input {
-
-      width: 100%;
-
-      padding: 12px 16px 12px 38px;
-
-      background: var(--surface);
-
-      border: 1px solid var(--border);
-
+    
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    .corporate-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.6);
       border-radius: 12px;
-
-      font-size: 13px;
-
-      color: var(--text);
-
-      outline: none;
-
     }
 
-    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); }
-
-
-
-    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-
-    .kpi-card { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 12px; text-align: center; }
-
-    .kpi-value { font-size: 18px; font-weight: 800; color: var(--text); font-family: 'JetBrains Mono', monospace; }
-
-    .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
-
-
-
-    .agent-card {
-
-      background: var(--surface);
-
-      border: 1px solid var(--border);
-
-      border-radius: 14px;
-
-      padding: 14px;
-
-      margin-bottom: 10px;
-
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-
-      transition: transform 0.15s ease;
-
+    .corporate-input {
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+    .corporate-input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     }
 
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top: 3px solid var(--accent-blue);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+    /* Danger Slots for Governance */
+    .penalty-slot {
+      height: 8px;
+      border-radius: 4px;
+      background-color: var(--bg-input);
+      transition: all 0.3s ease;
+      border: 1px solid var(--border-color);
+    }
+    .penalty-slot.active-strike {
+      background-color: var(--warning-orange);
+      border-color: var(--warning-orange);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+    }
+    .penalty-slot.active-flag {
+      background-color: var(--danger-red);
+      border-color: var(--danger-red);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+    }
 
-    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
-
-    .executive-info { display: flex; align-items: center; gap: 10px; }
-
-    .avatar-badge {
-
-      width: 38px;
-
-      height: 38px;
-
-      background: var(--surface-sub);
-
-      color: var(--accent);
-
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
       font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+    }
 
-      font-size: 13px;
-
+    .brand-emblem {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+      border-radius: 8px;
       display: flex;
-
       align-items: center;
-
       justify-content: center;
-
-      border-radius: 10px;
-
-      flex-shrink: 0;
-
-      border: 1px solid var(--border);
-
+      color: white;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
 
-    
-
-    .executive-name { font-size: 14px; font-weight: 700; color: var(--text); }
-
-    
-
-    .meta-tags { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-
-    .tag-type { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-
-    .tag-pt { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-
-    .tag-ft { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-
-    .tag-mentor { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-
-
-
-    .badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-align: right; white-space: nowrap; }
-
-    .badge-excellent { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-
-    .badge-fullday { background: rgba(20, 184, 166, 0.15); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.3); }
-
-    .badge-halfday { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-
-    .badge-progress { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-
-    .badge-pending { background: rgba(249, 115, 22, 0.15); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.3); }
-
-    .badge-absent { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-
-
-
-    .metrics-container { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px; margin-bottom: 12px; }
-
-    
-
-    .sub-metrics-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
-
-    .metric-row {
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      background: var(--surface-sub);
-
-      padding: 6px 9px;
-
-      border-radius: 6px;
-
-      font-size: 11px;
-
-    }
-
-    .metric-title { color: var(--text-muted); font-weight: 500; }
-
-    .metric-data { font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-
-
-
-    .hero-net-metric {
-
-      background: var(--hero-bg);
-
-      border: 1.5px solid var(--hero-border);
-
-      border-radius: 10px;
-
-      padding: 8px;
-
-      display: flex;
-
-      flex-direction: column;
-
-      justify-content: center;
-
-      align-items: center;
-
-      text-align: center;
-
-    }
-
-    .hero-label { font-size: 9px; font-weight: 800; color: var(--hero-label); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-
-    .hero-value { font-size: 18px; font-weight: 800; color: var(--hero-value); font-family: 'JetBrains Mono', monospace; }
-
-
-
-    .progress-bar-wrap { background: var(--surface-sub); height: 6px; border-radius: 99px; overflow: hidden; }
-
-    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 99px; transition: width 0.4s ease; }
-
-
-
-    .app-footer {
-
-      text-align: center;
-
-      padding: 18px 8px 24px 8px;
-
-      font-size: 11px;
-
-      color: var(--text-muted);
-
-      font-weight: 600;
-
-      letter-spacing: 0.02em;
-
-    }
-
-
-
-    .state-message { text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
-
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
   </style>
-
 </head>
+<body class="min-h-screen flex flex-col antialiased">
 
-<body>
-
-
-
-  <div id="captureArea">
-
-    <header class="master-header">
-
-      <div class="header-top-row">
-
-        <div class="live-badge">
-
-          <span class="pulse-dot"></span>
-
-          <span>LIVE TELEMETRY</span>
-
+  <!-- ================= AUTHENTICATION MODAL ================= -->
+  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06090F]/95 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="corporate-card p-8 w-full max-w-sm relative overflow-hidden">
+      <!-- Top Cyber Line -->
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+      
+      <div class="text-center mb-8 mt-2">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 mb-3 shadow-lg shadow-blue-500/10">
+          <i class="fa-solid fa-chart-line text-2xl"></i>
         </div>
+        <h1 class="text-xl font-bold tracking-tight text-white">TARA TALENT SOLUTIONS</h1>
+        <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-semibold">FBO Enterprise Hub</p>
+      </div>
 
-        <div class="header-actions">
-
-          <button class="btn-action" onclick="toggleTheme()" id="themeBtn" title="Theme">☀️</button>
-
-          <button class="btn-action" onclick="captureScreen()" title="Save Image">📸 Save</button>
-
-          <button class="btn-action" onclick="triggerFastSync()" title="Sync">↻ Sync</button>
-
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Corporate Email</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <i class="fa-solid fa-envelope text-gray-500 text-xs"></i>
+            </div>
+            <input type="email" id="inputEmail" required class="w-full corporate-input rounded-lg pl-9 pr-4 py-3 text-sm focus:outline-none" placeholder="user@company.com">
+          </div>
         </div>
-
-      </div>
-
-
-
-      <div class="header-heading-title">TODAY'S LIVE LOGIN</div>
-
-
-
-      <div class="header-info-strip">
-
-        <span class="shift-tag" id="sessionDateLabel">Shift Date: Today</span>
-
-        <span class="sync-timestamp" id="syncStatus">Syncing...</span>
-
-      </div>
-
-    </header>
-
-
-
-    <div class="search-wrapper">
-
-      <span class="search-icon">🔍</span>
-
-      <input type="text" id="searchInput" class="search-input" placeholder="Search by executive or mentor..." oninput="filterPortalData()">
-
+        <div>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Authorization Code</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <i class="fa-solid fa-key text-gray-500 text-xs"></i>
+            </div>
+            <input type="password" id="inputPass" required class="w-full corporate-input rounded-lg pl-9 pr-4 py-3 text-sm focus:outline-none" placeholder="••••••••">
+          </div>
+        </div>
+        <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 transition-colors duration-200 font-bold text-sm py-3.5 rounded-lg flex items-center justify-center space-x-2 mt-4 shadow-[0_0_15px_rgba(59,130,246,0.4)] border border-blue-500">
+          <span>Secure Sign In</span>
+        </button>
+        <div id="authError" class="text-[11px] text-red-400 text-center hidden font-medium bg-red-500/10 border border-red-500/20 py-2 rounded-lg mt-3"></div>
+      </form>
     </div>
-
-
-
-    <div class="kpi-row" id="kpiBar" style="display: none;">
-
-      <div class="kpi-card">
-
-        <div class="kpi-value" id="kpiTotal">0</div>
-
-        <div class="kpi-label">Active Team</div>
-
-      </div>
-
-      <div class="kpi-card">
-
-        <div class="kpi-value" id="kpiCompleted" style="color: #34d399;">0</div>
-
-        <div class="kpi-label">Target Met</div>
-
-      </div>
-
-      <div class="kpi-card">
-
-        <div class="kpi-value" id="kpiInProgress" style="color: #60a5fa;">0</div>
-
-        <div class="kpi-label">In Shift</div>
-
-      </div>
-
-    </div>
-
-
-
-    <main id="portalContainer">
-
-      <div class="state-message">Synchronizing workforce login records...</div>
-
-    </main>
-
-
-
-    <footer class="app-footer">
-
-      Powered by TARA Talent Solutions
-
-    </footer>
-
   </div>
 
+  <!-- ================= MAIN DASHBOARD ================= -->
+  <div id="mainPortal" class="hidden flex-1 flex flex-col pb-24">
+    
+    <!-- Corporate Header -->
+    <header class="bg-[#0F1523]/95 backdrop-blur-md border-b border-[#26314A] px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-sm">
+      <div class="flex items-center space-x-3">
+        <div class="brand-logo">
+          <div class="brand-emblem">
+            <i class="fa-solid fa-chart-line text-sm"></i>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xs font-black tracking-wider text-white leading-none">TARA</span>
+            <span class="text-[8px] text-blue-400 font-bold uppercase tracking-widest mt-0.5">Enterprise</span>
+          </div>
+        </div>
+        <div class="h-6 w-px bg-gray-700 mx-1"></div>
+        <div>
+          <h2 class="font-bold text-sm text-white" id="userName">--</h2>
+          <div class="flex items-center space-x-2 mt-0.5">
+            <span class="text-[9px] uppercase font-bold text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-800" id="userType">Full-Time</span>
+            <span class="text-[10px] font-black text-orange-500 flex items-center gap-1"><i class="fa-solid fa-fire"></i> <span id="userStreak">0</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="syncData()" id="syncBtn" class="w-8 h-8 rounded bg-[#1A2234] border border-[#26314A] text-gray-400 hover:text-white transition flex items-center justify-center">
+          <i class="fa-solid fa-rotate-right" id="syncIcon"></i>
+        </button>
+        <button onclick="logout()" class="w-8 h-8 rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:text-red-300 transition flex items-center justify-center">
+          <i class="fa-solid fa-power-off"></i>
+        </button>
+      </div>
+    </header>
 
+    <!-- TAB 1: WORKFORCE TELEMETRY -->
+    <section id="tab-login" class="flex-1 p-4 max-w-md mx-auto w-full space-y-4 mt-2">
+      
+      <div class="flex justify-between items-end px-1">
+        <h3 class="font-bold text-gray-400 uppercase tracking-widest text-[10px]">Real-Time Shift Status</h3>
+        <span class="text-gray-500 font-mono text-[9px] bg-[#0F1523] px-2 py-1 rounded border border-[#26314A]" id="liveDate">Today</span>
+      </div>
+
+      <!-- Main Telemetry Card -->
+      <div class="corporate-card p-5 relative overflow-hidden">
+        <!-- Left indicator line -->
+        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500" id="statusLine"></div>
+        
+        <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-4 ml-2">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest block mb-0.5">Compliance Target</span>
+            <p class="text-[11px] font-bold text-gray-300 font-mono" id="targetLabel">> 07:01:00 Required</p>
+          </div>
+          <span id="liveBadge" class="px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-[#1A2234] text-gray-400 border border-[#26314A]">Connecting</span>
+        </div>
+
+        <div class="text-center ml-2">
+          <span class="text-[10px] font-bold uppercase text-gray-500 tracking-widest block mb-1">Net Production</span>
+          <p class="text-4xl font-black text-white font-mono tracking-tight drop-shadow-md" id="liveNet">00:00:00</p>
+          
+          <!-- Progress Bar with accurate numbers underneath -->
+          <div class="mt-4 w-full bg-[#1A2234] h-1.5 rounded-full overflow-hidden border border-[#26314A]">
+            <div id="liveProgress" class="bg-blue-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(59,130,246,0.6)]" style="width: 0%;"></div>
+          </div>
+          <div class="flex justify-between items-center mt-1.5 text-[9px] font-mono font-bold text-gray-500">
+            <span>00:00:00</span>
+            <span id="progressBarTarget">07:01:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="corporate-card p-4 flex flex-col justify-center border-l-2 border-l-gray-600 bg-gradient-to-r from-[#1A2234]/30 to-transparent">
+          <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest mb-1">Total Break</span>
+          <span class="font-mono text-lg font-bold text-gray-200" id="liveBreak">00:00:00</span>
+        </div>
+        <div class="corporate-card p-4 flex flex-col justify-center border-l-2 border-l-gray-600 bg-gradient-to-r from-[#1A2234]/30 to-transparent">
+          <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest mb-1">Gross Login</span>
+          <span class="font-mono text-lg font-bold text-gray-200" id="liveGross">00:00:00</span>
+        </div>
+      </div>
+
+      <div class="corporate-card p-3 text-[10px] flex justify-between items-center text-gray-400 font-medium bg-[#1A2234]/30 border-dashed border-[#26314A]">
+        <span class="uppercase tracking-widest">Initial System Auth:</span>
+        <span class="font-mono text-white font-bold" id="liveFirst">--:--</span>
+      </div>
+    </section>
+
+    <!-- TAB 2: GOVERNANCE & ACCOUNTABILITY -->
+    <section id="tab-profile" class="hidden flex-1 p-4 max-w-md mx-auto w-full space-y-4 mt-2">
+      
+      <div class="flex justify-between items-end px-1">
+        <h3 class="font-bold text-gray-400 uppercase tracking-widest text-[10px]">Policy Compliance & Risk</h3>
+      </div>
+
+      <!-- 1. STRIKE ENGINE (Serious Penalty UI) -->
+      <div class="corporate-card p-5 border border-red-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A0B0B]/60 shadow-[0_4px_15px_rgba(239,68,68,0.05)]">
+        <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-3">
+          <div class="flex items-center space-x-2 text-red-500">
+            <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+            <h3 class="font-bold text-[10px] uppercase tracking-widest">Attendance Violations</h3>
+          </div>
+          <span id="strikeBadge" class="text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]">0 Active</span>
+        </div>
+
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Termination Risk</span>
+            <div class="flex items-baseline space-x-1 mt-0.5">
+              <span class="text-3xl font-black text-white font-mono" id="valStrikes">0</span>
+              <span class="text-[9px] text-red-500/70 font-bold uppercase">/ 4 Max</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Action Status</span>
+            <p class="text-[10px] font-bold text-gray-300 mt-0.5 uppercase" id="strikeStatus">Good Standing</p>
+          </div>
+        </div>
+
+        <!-- Danger Slots for Strikes -->
+        <div class="grid grid-cols-4 gap-2 mb-4">
+          <div id="sb1" class="penalty-slot"></div>
+          <div id="sb2" class="penalty-slot"></div>
+          <div id="sb3" class="penalty-slot"></div>
+          <div id="sb4" class="penalty-slot"></div>
+        </div>
+
+        <div class="bg-black/30 p-2.5 rounded border border-white/5 text-[9px] flex justify-between items-center">
+          <span class="text-gray-400 font-bold uppercase tracking-wider">Recovery Target (Weeks)</span>
+          <span class="text-gray-300 font-mono font-bold"><span id="valConsistent" class="text-emerald-500">0</span> / 3</span>
+        </div>
+      </div>
+
+      <!-- 2. FLAG ENGINE (Serious Penalty UI) -->
+      <div class="corporate-card p-5 border border-orange-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A120B]/60 shadow-[0_4px_15px_rgba(245,158,11,0.05)]">
+        <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-3">
+          <div class="flex items-center space-x-2 text-orange-500">
+            <i class="fa-solid fa-flag text-sm"></i>
+            <h3 class="font-bold text-[10px] uppercase tracking-widest">Performance Flags</h3>
+          </div>
+          <span id="flagBadge" class="text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]">0 Active</span>
+        </div>
+
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Review Risk</span>
+            <div class="flex items-baseline space-x-1 mt-0.5">
+              <span class="text-3xl font-black text-white font-mono" id="valFlags">0</span>
+              <span class="text-[9px] text-orange-500/70 font-bold uppercase">/ 4 Max</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Governance</span>
+            <p class="text-[10px] font-bold text-gray-300 mt-0.5 uppercase" id="flagStatus">Active / Normal</p>
+          </div>
+        </div>
+
+        <!-- Danger Slots for Flags -->
+        <div class="grid grid-cols-4 gap-2 mb-4">
+          <div id="fb1" class="penalty-slot"></div>
+          <div id="fb2" class="penalty-slot"></div>
+          <div id="fb3" class="penalty-slot"></div>
+          <div id="fb4" class="penalty-slot"></div>
+        </div>
+
+        <div class="bg-black/30 p-2.5 rounded border border-white/5 text-[9px] flex justify-between items-center">
+          <span class="text-gray-400 font-bold uppercase tracking-wider">Current Score Band</span>
+          <span class="text-blue-400 font-bold uppercase" id="valScoreBand">Good Standing</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CORPORATE BOTTOM NAVIGATION -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#0F1523]/95 backdrop-blur-md border-t border-[#26314A] pb-safe shadow-[0_-4px_15px_rgba(0,0,0,0.3)]">
+      <div class="max-w-md mx-auto flex">
+        <button onclick="switchTab('login')" id="btnTabLogin" class="flex-1 flex flex-col items-center justify-center py-3 text-blue-500 font-bold text-[9px] uppercase tracking-widest transition bg-blue-500/10 border-t-2 border-blue-500">
+          <i class="fa-solid fa-satellite-dish text-base mb-1"></i>
+          <span>Telemetry</span>
+        </button>
+        <button onclick="switchTab('profile')" id="btnTabProfile" class="flex-1 flex flex-col items-center justify-center py-3 text-gray-500 font-bold text-[9px] uppercase tracking-widest transition hover:text-gray-300 hover:bg-white/5 border-t-2 border-transparent">
+          <i class="fa-solid fa-gavel text-base mb-1"></i>
+          <span>Governance</span>
+        </button>
+      </div>
+    </nav>
+  </div>
 
   <script>
+    const APP_URL = "https://script.google.com/macros/s/AKfycbwlIyDugTAU-codhmJZ7OH_Q-5RYW6blDidh8uBWw7Nkka6-KcI_5Dr6Qx-cJIkefe2/exec";
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0RQNVEoXN5RpeRx6KqiOxP_-l7CrtK_Hb8QUd_Ts8dummZ8z4QniUFqjMiCQbb9ehKw/exec";
-
-    const SESSION_STORE_KEY = "tara_telemetry_last_state";
-
-
-
-    let workforceDataset = [];
-
-    let isRequestUnderway = false;
-
-    let retryAttempt = 0;
-
-
-
-    function toggleTheme() {
-
-      const html = document.documentElement;
-
-      const current = html.getAttribute('data-theme');
-
-      const target = current === 'dark' ? 'light' : 'dark';
-
-      html.setAttribute('data-theme', target);
-
-      document.getElementById('themeBtn').innerText = target === 'dark' ? '☀️' : '🌙';
-
+    function playSuccessSound() {
+        try {
+            const audio = new Audio('https://actions.google.com/sounds/v1/ui/proxima.ogg');
+            audio.volume = 0.6;
+            audio.play();
+        } catch(e) {}
     }
 
-
-
-    function captureScreen() {
-
-      const target = document.getElementById('captureArea');
-
-      html2canvas(target, {
-
-        scale: 2,
-
-        useCORS: true,
-
-        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
-
-      }).then(canvas => {
-
-        const link = document.createElement('a');
-
-        link.download = `Live_Login_Status_${new Date().toISOString().slice(0,10)}.png`;
-
-        link.href = canvas.toDataURL('image/png');
-
-        link.click();
-
-      });
-
-    }
-
-
-
-    function getInitials(name) {
-
-      if (!name) return 'EX';
-
-      const parts = name.trim().split(' ').filter(Boolean);
-
-      return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
-
-    }
-
-
-
-    // Instant zero-lag cache paint on page load/pull-to-refresh
-
-    function paintFromPreviousSession() {
-
-      try {
-
-        const cached = sessionStorage.getItem(SESSION_STORE_KEY);
-
-        if (cached) {
-
-          const payload = JSON.parse(cached);
-
-          if (payload && payload.data && payload.data.length > 0) {
-
-            workforceDataset = payload.data;
-
-            if (payload.shiftDate) document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
-
-            document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
-
-            updateDashboard(workforceDataset);
-
-          }
-
-        }
-
-      } catch (e) {}
-
-    }
-
-
-
-    function updateDashboard(data) {
-
-      const container = document.getElementById('portalContainer');
-
-      if (!data || data.length === 0) {
-
-        document.getElementById('kpiBar').style.display = 'none';
-
-        container.innerHTML = '<div class="state-message">No active login records found.</div>';
-
-        return;
-
-      }
-
-
-
-      document.getElementById('kpiBar').style.display = 'grid';
-
-      document.getElementById('kpiTotal').innerText = data.length;
-
-      const completed = data.filter(d => d.isMet).length;
-
-      document.getElementById('kpiCompleted').innerText = completed;
-
-      document.getElementById('kpiInProgress').innerText = data.length - completed;
-
-
-
-      renderCards(data);
-
-    }
-
-
-
-    function renderCards(dataList) {
-
-      const container = document.getElementById('portalContainer');
-
-      container.innerHTML = '';
-
-
-
-      dataList.forEach(item => {
-
-        const initials = getInitials(item.name);
-
-        const isPt = item.workingType === "Part-Time";
-
-
-
-        const card = document.createElement('div');
-
-        card.className = 'agent-card';
-
-        card.innerHTML = `
-
-          <div class="card-header">
-
-            <div class="executive-info">
-
-              <div class="avatar-badge">${initials}</div>
-
-              <div>
-
-                <div class="executive-name">${item.name}</div>
-
-                <div class="meta-tags">
-
-                  <span class="tag-type ${isPt ? 'tag-pt' : 'tag-ft'}">${item.workingType}</span>
-
-                  <span class="tag-mentor">• ${item.mentor}</span>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            <div class="badge ${item.badgeClass}">${item.badge}</div>
-
-          </div>
-
-          
-
-          <div class="metrics-container">
-
-            <div class="sub-metrics-grid">
-
-              <div class="metric-row">
-
-                <span class="metric-title">Login</span>
-
-                <span class="metric-data">${item.loginTime}</span>
-
-              </div>
-
-              <div class="metric-row">
-
-                <span class="metric-title">Gross</span>
-
-                <span class="metric-data">${item.totalLogin}</span>
-
-              </div>
-
-              <div class="metric-row">
-
-                <span class="metric-title">Break</span>
-
-                <span class="metric-data">${item.totalBreak}</span>
-
-              </div>
-
-            </div>
-
-            
-
-            <div class="hero-net-metric">
-
-              <span class="hero-label">Net Production</span>
-
-              <span class="hero-value">${item.netLogin}</span>
-
-            </div>
-
-          </div>
-
-
-
-          <div class="progress-bar-wrap">
-
-            <div class="progress-bar-fill" style="width: ${item.progressPct}%;"></div>
-
-          </div>
-
-        `;
-
-        container.appendChild(card);
-
-      });
-
-    }
-
-
-
-    function filterPortalData() {
-
-      const q = document.getElementById('searchInput').value.toLowerCase().trim();
-
-      const filtered = workforceDataset.filter(item => 
-
-        item.name.toLowerCase().includes(q) || 
-
-        (item.mentor && item.mentor.toLowerCase().includes(q))
-
-      );
-
-      renderCards(filtered);
-
-    }
-
-
-
-    // High-Resilience Fetch Engine with Smart Auto-Retries
-
-    function triggerFastSync() {
-
-      if (isRequestUnderway) return;
-
-      isRequestUnderway = true;
-
-      document.getElementById('syncStatus').innerText = "Syncing...";
-
-
-
-      const cleanTimestamp = Date.now();
-
-      const cbName = `tara_sync_${cleanTimestamp}_${Math.floor(Math.random() * 1000)}`;
-
-
-
-      let requestResolved = false;
-
-
-
-      const fallbackTimer = setTimeout(() => {
-
-        if (!requestResolved) {
-
-          requestResolved = true;
-
-          isRequestUnderway = false;
-
-          cleanup(cbName);
-
-          handleNetworkFailure();
-
-        }
-
-      }, 5000);
-
-
-
-      window[cbName] = function(payload) {
-
-        if (requestResolved) return;
-
-        requestResolved = true;
-
-        clearTimeout(fallbackTimer);
-
-        isRequestUnderway = false;
-
-        retryAttempt = 0;
-
-        cleanup(cbName);
-
-
-
-        if (payload && payload.data) {
-
-          workforceDataset = payload.data;
-
-          try { sessionStorage.setItem(SESSION_STORE_KEY, JSON.stringify(payload)); } catch(e) {}
-
-          
-
-          document.getElementById('syncStatus').innerText = `Synced at ${payload.updated}`;
-
-          if (payload.shiftDate) {
-
-            document.getElementById('sessionDateLabel').innerText = `Shift Date: ${payload.shiftDate}`;
-
-          }
-
-          updateDashboard(workforceDataset);
-
-        }
-
-      };
-
-
-
-      const script = document.createElement('script');
-
-      script.id = cbName;
-
-      script.type = 'text/javascript';
-
-      script.async = true;
-
-      script.src = `${WEB_APP_URL}?callback=${cbName}&_z=${cleanTimestamp}`;
-
-
-
-      script.onerror = function() {
-
-        if (!requestResolved) {
-
-          requestResolved = true;
-
-          clearTimeout(fallbackTimer);
-
-          isRequestUnderway = false;
-
-          cleanup(cbName);
-
-          handleNetworkFailure();
-
-        }
-
-      };
-
-
-
-      document.head.appendChild(script);
-
-    }
-
-
-
-    function cleanup(callbackName) {
-
-      try { delete window[callbackName]; } catch (e) {}
-
-      const node = document.getElementById(callbackName);
-
-      if (node && node.parentNode) node.parentNode.removeChild(node);
-
-    }
-
-
-
-    function handleNetworkFailure() {
-
-      if (retryAttempt < 2) {
-
-        retryAttempt++;
-
-        setTimeout(triggerFastSync, 400 * retryAttempt);
-
-      } else {
-
-        retryAttempt = 0;
-
-        if (workforceDataset.length > 0) {
-
-          document.getElementById('syncStatus').innerText = "Live (Cached)";
-
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("inputEmail").value.trim();
+      const pass = document.getElementById("inputPass").value.trim();
+      const btn = document.getElementById("btnSubmit");
+      const err = document.getElementById("authError");
+
+      btn.innerHTML = '<div class="spinner"></div> <span class="ml-2">Authenticating...</span>';
+      btn.disabled = true;
+      err.classList.add("hidden");
+
+      fetchDataDirect(email, pass, function(res) {
+        btn.innerHTML = '<span>Secure Sign In</span>';
+        btn.disabled = false;
+        
+        if (res && res.status === "success") {
+          playSuccessSound();
+          localStorage.setItem("tara_corp_session", JSON.stringify({ email: email, pass: pass, payload: res }));
+          renderPortal(res);
         } else {
-
-          document.getElementById('syncStatus').innerText = "Sync Failed";
-
+          err.innerText = (res && res.message) ? res.message : "Access Denied.";
+          err.classList.remove("hidden");
         }
-
-      }
-
+      });
     }
 
+    // Ultra-Fast JSONP Fetch with 15s extended timeout to prevent any timeout issues
+    function fetchDataDirect(email, pass, cb) {
+      let resolved = false;
+      const targetUrl = `${APP_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`;
 
+      const cbName = "tara_corp_" + Date.now();
+      window[cbName] = function(jsonpData) {
+        resolved = true;
+        delete window[cbName];
+        const sNode = document.getElementById(cbName);
+        if (sNode) sNode.remove();
+        cb(jsonpData);
+      };
 
-    window.addEventListener('DOMContentLoaded', () => {
+      const s = document.createElement("script");
+      s.id = cbName;
+      s.src = `${targetUrl}&callback=${cbName}`;
+      s.onerror = function() {
+        if (!resolved) { 
+          resolved = true; 
+          fetch(targetUrl).then(r=>r.json()).then(d=>cb(d)).catch(()=>cb({status:"error", message:"Network error."}));
+        }
+      };
+      document.head.appendChild(s);
+      
+      // Increased timeout to 15 seconds to completely eliminate timeout issues on mobile/slow connection
+      setTimeout(()=>{ 
+        if(!resolved) { 
+          resolved=true; 
+          cb({status:"error", message:"Request timed out. Please check your internet or retry."}); 
+        } 
+      }, 15000);
+    }
 
-      paintFromPreviousSession();
+    function renderPortal(data) {
+      document.getElementById("loginModal").classList.add("hidden");
+      document.getElementById("mainPortal").classList.remove("hidden");
 
-      triggerFastSync();
+      const p = data.profile || {};
+      document.getElementById("userName").innerText = p.name || "--";
+      document.getElementById("userType").innerText = p.workingType || "Full-Time";
+      document.getElementById("userStreak").innerText = data.streak || 0;
 
-    });
+      const l = data.live || {};
+      const isPt = p.workingType.includes("Part");
+      
+      const requiredText = isPt ? "04:01:00" : "07:01:00";
+      document.getElementById("targetLabel").innerText = `> ${requiredText} Required`;
+      document.getElementById("progressBarTarget").innerText = l.targetStr || requiredText;
+      
+      document.getElementById("liveDate").innerText = l.date || "Today";
+      document.getElementById("liveNet").innerText = l.netLogin || "00:00:00";
+      document.getElementById("liveBreak").innerText = l.totalBreak || "00:00:00";
+      document.getElementById("liveGross").innerText = l.totalLogin || "00:00:00";
+      document.getElementById("liveFirst").innerText = l.loginTime || "--:--";
 
+      const badge = document.getElementById("liveBadge");
+      const sLine = document.getElementById("statusLine");
+      const pBar = document.getElementById("liveProgress");
+      
+      badge.innerText = l.badge || "In Shift";
+      
+      if (l.isMet) {
+        badge.className = "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+        sLine.className = "absolute top-0 left-0 w-1 h-full bg-emerald-500";
+        pBar.className = "bg-emerald-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(16,185,129,0.8)]";
+      } else if (l.netLogin !== "00:00:00") {
+        badge.className = "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30";
+        sLine.className = "absolute top-0 left-0 w-1 h-full bg-blue-500";
+        pBar.className = "bg-blue-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(59,130,246,0.8)]";
+      } else {
+        badge.className = "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30";
+        sLine.className = "absolute top-0 left-0 w-1 h-full bg-red-500";
+        pBar.className = "bg-red-500 h-full rounded-full transition-all duration-700 ease-out";
+      }
+
+      setTimeout(() => { pBar.style.width = (l.pct || 0) + "%"; }, 100);
+
+      // --- STRIKES ---
+      const str = parseInt(data.attendance.strikes) || 0;
+      const cw = parseInt(data.attendance.consistentWeeks) || 0;
+      document.getElementById("valStrikes").innerText = str;
+      
+      let strStatus = data.attendance.status || "Good Standing";
+      if(str >= 4) strStatus = "TERMINATION REVIEW";
+      document.getElementById("strikeStatus").innerText = strStatus;
+      if(str >= 3) document.getElementById("strikeStatus").classList.add("text-red-400");
+      else document.getElementById("strikeStatus").classList.remove("text-red-400");
+
+      document.getElementById("valConsistent").innerText = cw;
+
+      const sBadge = document.getElementById("strikeBadge");
+      if (str > 0) {
+        sBadge.innerText = `⚠️ ${str} Active`;
+        sBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase tracking-wider";
+      } else {
+        sBadge.innerText = "0 Active";
+        sBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]";
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById("sb" + i).className = i <= str ? "penalty-slot active-strike" : "penalty-slot";
+      }
+
+      // --- FLAGS ---
+      const flg = parseInt(data.performance.flags) || 0;
+      document.getElementById("valFlags").innerText = flg;
+      
+      let flgStatus = data.performance.status || "Active / Normal";
+      if(flg >= 4) flgStatus = "PERFORMANCE REVIEW";
+      document.getElementById("flagStatus").innerText = flgStatus;
+      if(flg >= 3) document.getElementById("flagStatus").classList.add("text-orange-400");
+      else document.getElementById("flagStatus").classList.remove("text-orange-400");
+      
+      document.getElementById("valScoreBand").innerText = data.performance.scoreBand || "Good Standing";
+
+      const fBadge = document.getElementById("flagBadge");
+      if (flg > 0) {
+        fBadge.innerText = `🚩 ${flg} Active`;
+        fBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 uppercase tracking-wider";
+      } else {
+        fBadge.innerText = "0 Active";
+        fBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]";
+      }
+
+      for (let j = 1; j <= 4; j++) {
+        document.getElementById("fb" + j).className = j <= flg ? "penalty-slot active-flag" : "penalty-slot";
+      }
+    }
+
+    function switchTab(t) {
+      const vL = document.getElementById("tab-login");
+      const vP = document.getElementById("tab-profile");
+      const bL = document.getElementById("btnTabLogin");
+      const bP = document.getElementById("btnTabProfile");
+
+      if (t === 'login') {
+        vL.classList.remove("hidden");
+        vP.classList.add("hidden");
+        bL.className = "flex-1 flex flex-col items-center justify-center py-3 text-blue-500 font-bold text-[9px] uppercase tracking-widest transition bg-blue-500/10 border-t-2 border-blue-500";
+        bP.className = "flex-1 flex flex-col items-center justify-center py-3 text-gray-500 font-bold text-[9px] uppercase tracking-widest transition hover:text-gray-300 hover:bg-white/5 border-t-2 border-transparent";
+      } else {
+        vL.classList.add("hidden");
+        vP.classList.remove("hidden");
+        bL.className = "flex-1 flex flex-col items-center justify-center py-3 text-gray-500 font-bold text-[9px] uppercase tracking-widest transition hover:text-gray-300 hover:bg-white/5 border-t-2 border-transparent";
+        bP.className = "flex-1 flex flex-col items-center justify-center py-3 text-blue-500 font-bold text-[9px] uppercase tracking-widest transition bg-blue-500/10 border-t-2 border-blue-500";
+      }
+    }
+
+    function syncData() {
+      const sess = JSON.parse(localStorage.getItem("tara_corp_session") || "{}");
+      if (!sess.email) return;
+
+      const icon = document.getElementById("syncIcon");
+      icon.classList.add("animate-spin");
+
+      fetchDataDirect(sess.email, sess.pass, function(res) {
+        setTimeout(() => icon.classList.remove("animate-spin"), 500);
+        if (res && res.status === "success") {
+          playSuccessSound();
+          sess.payload = res;
+          localStorage.setItem("tara_corp_session", JSON.stringify(sess));
+          renderPortal(res);
+        }
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem("tara_corp_session");
+      location.reload();
+    }
+
+    window.onload = function() {
+      const sess = JSON.parse(localStorage.getItem("tara_corp_session") || "{}");
+      if (sess && sess.payload) {
+        renderPortal(sess.payload);
+      }
+    };
   </script>
-
 </body>
-
 </html>
