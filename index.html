@@ -28,6 +28,9 @@
       color: var(--text-main);
       -webkit-tap-highlight-color: transparent; 
       user-select: none; 
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
     }
     
     .font-mono { font-family: 'JetBrains Mono', monospace; }
@@ -36,7 +39,7 @@
       background-color: var(--bg-card);
       border: 1px solid var(--border-color);
       box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.6);
-      border-radius: 12px;
+      border-radius: 14px;
     }
 
     .corporate-input {
@@ -47,7 +50,7 @@
     }
     .corporate-input:focus {
       border-color: var(--accent-blue);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
     }
 
     .spinner {
@@ -56,10 +59,11 @@
       border-radius: 50%;
       width: 18px;
       height: 18px;
-      animation: spin 1s linear infinite;
+      animation: spin 0.8s linear infinite;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+    /* Danger Slots for Governance */
     .penalty-slot {
       height: 8px;
       border-radius: 4px;
@@ -70,34 +74,25 @@
     .penalty-slot.active-strike {
       background-color: var(--warning-orange);
       border-color: var(--warning-orange);
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
     }
     .penalty-slot.active-flag {
       background-color: var(--danger-red);
       border-color: var(--danger-red);
-      box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
     }
 
-    .brand-logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #ffffff;
+    /* Logo Image Style */
+    .tara-logo-large {
+      height: 72px;
+      max-width: 190px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.25));
     }
-
-    .brand-emblem {
-      width: 34px;
-      height: 34px;
-      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 16px;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    .tara-logo-header {
+      height: 32px;
+      max-width: 85px;
+      object-fit: contain;
     }
 
     ::-webkit-scrollbar { width: 0px; background: transparent; }
@@ -106,42 +101,53 @@
 <body class="min-h-screen flex flex-col antialiased">
 
   <!-- ================= AUTHENTICATION MODAL ================= -->
-  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06090F]/95 backdrop-blur-md p-4 transition-all duration-300">
-    <div class="corporate-card p-8 w-full max-w-sm relative overflow-hidden">
-      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06090F] p-4 transition-all duration-300">
+    <div class="corporate-card p-7 w-full max-w-sm relative overflow-hidden">
+      <!-- Top Accent Bar -->
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-blue-500 to-indigo-500"></div>
       
-      <div class="text-center mb-8 mt-2">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 mb-3 shadow-lg shadow-blue-500/10">
-          <i class="fa-solid fa-chart-line text-2xl"></i>
+      <div class="text-center mb-6 mt-1 flex flex-col items-center">
+        <!-- Exact TARA Company Logo directly rendered from Drive Google CDN with fallback -->
+        <div class="w-full flex justify-center items-center py-2 mb-2">
+          <img 
+            id="loginLogoImg"
+            src="https://lh3.googleusercontent.com/d/1RaL_yJMnhptPWnUk_eMMzsYNvJrTBrd0" 
+            alt="TARA Talent Solutions" 
+            class="tara-logo-large"
+            onerror="loadFallbackLogo(this, true)"
+          />
         </div>
-        <h1 class="text-xl font-bold tracking-tight text-white">TARA TALENT SOLUTIONS</h1>
-        <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-semibold">FBO Enterprise Hub</p>
+        <h1 class="text-lg font-black tracking-wider text-white uppercase">TARA Enterprise Hub</h1>
+        <p class="text-[10px] text-gray-400 mt-0.5 uppercase tracking-widest font-semibold">Authorized Personnel Access</p>
       </div>
 
       <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
         <div>
-          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Corporate Email</label>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Registered Email</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <i class="fa-solid fa-envelope text-gray-500 text-xs"></i>
             </div>
-            <input type="email" id="inputEmail" required class="w-full corporate-input rounded-lg pl-9 pr-4 py-3 text-sm focus:outline-none" placeholder="user@company.com">
+            <input type="email" id="inputEmail" required class="w-full corporate-input rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none" placeholder="name@company.com" autocomplete="email">
           </div>
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Authorization Code</label>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Passcode</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <i class="fa-solid fa-key text-gray-500 text-xs"></i>
             </div>
-            <input type="password" id="inputPass" required class="w-full corporate-input rounded-lg pl-9 pr-4 py-3 text-sm focus:outline-none" placeholder="••••••••">
+            <input type="password" id="inputPass" required class="w-full corporate-input rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none" placeholder="••••••••" autocomplete="current-password">
           </div>
         </div>
-        <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 transition-colors duration-200 font-bold text-sm py-3.5 rounded-lg flex items-center justify-center space-x-2 mt-4 shadow-[0_0_15px_rgba(59,130,246,0.4)] border border-blue-500">
-          <span>Secure Sign In</span>
+        <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] transition-all font-bold text-sm py-3.5 rounded-xl flex items-center justify-center space-x-2 mt-4 shadow-lg shadow-blue-600/30 border border-blue-500">
+          <span>Authorize & Sign In</span>
         </button>
-        <div id="authError" class="text-[11px] text-red-400 text-center hidden font-medium bg-red-500/10 border border-red-500/20 py-2 rounded-lg mt-3"></div>
+        <div id="authError" class="text-[11px] text-red-400 text-center hidden font-medium bg-red-500/10 border border-red-500/20 py-2.5 rounded-xl mt-2"></div>
       </form>
+      <div class="mt-5 text-center">
+        <span class="text-[9px] text-gray-500 uppercase tracking-widest font-bold">24-Hour Active Shift Session</span>
+      </div>
     </div>
   </div>
 
@@ -149,65 +155,68 @@
   <div id="mainPortal" class="hidden flex-1 flex flex-col pb-24">
     
     <!-- Corporate Header -->
-    <header class="bg-[#0F1523]/95 backdrop-blur-md border-b border-[#26314A] px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-sm">
-      <div class="flex items-center space-x-3">
-        <div class="brand-logo">
-          <div class="brand-emblem">
-            <i class="fa-solid fa-chart-line text-sm"></i>
-          </div>
-          <div class="flex flex-col">
-            <span class="text-xs font-black tracking-wider text-white leading-none">TARA</span>
-            <span class="text-[8px] text-blue-400 font-bold uppercase tracking-widest mt-0.5">Enterprise</span>
-          </div>
+    <header class="bg-[#0F1523]/95 backdrop-blur-md border-b border-[#26314A] px-4 py-2.5 sticky top-0 z-40 flex items-center justify-between shadow-sm">
+      <div class="flex items-center space-x-2.5">
+        <!-- Header Logo -->
+        <div class="flex items-center">
+          <img 
+            id="headerLogoImg"
+            src="https://lh3.googleusercontent.com/d/1RaL_yJMnhptPWnUk_eMMzsYNvJrTBrd0" 
+            alt="TARA" 
+            class="tara-logo-header"
+            onerror="loadFallbackLogo(this, false)"
+          />
         </div>
-        <div class="h-6 w-px bg-gray-700 mx-1"></div>
+        <div class="h-6 w-px bg-gray-700/60 mx-1"></div>
         <div>
-          <h2 class="font-bold text-sm text-white" id="userName">--</h2>
+          <h2 class="font-bold text-xs text-white leading-tight" id="userName">--</h2>
           <div class="flex items-center space-x-2 mt-0.5">
-            <span class="text-[9px] uppercase font-bold text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-800" id="userType">Full-Time</span>
-            <span class="text-[10px] font-black text-orange-500 flex items-center gap-1"><i class="fa-solid fa-fire"></i> <span id="userStreak">0</span></span>
+            <span class="text-[9px] uppercase font-extrabold text-blue-400 bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-800/40" id="userType">Full-Time</span>
+            <span class="text-[10px] font-black text-amber-500 flex items-center gap-1"><i class="fa-solid fa-fire text-amber-400"></i> <span id="userStreak">0</span> Days</span>
           </div>
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <button onclick="syncData()" id="syncBtn" class="w-8 h-8 rounded bg-[#1A2234] border border-[#26314A] text-gray-400 hover:text-white transition flex items-center justify-center">
-          <i class="fa-solid fa-rotate-right" id="syncIcon"></i>
+        <button onclick="syncData()" id="syncBtn" title="Sync Telemetry" class="w-8 h-8 rounded-lg bg-[#1A2234] border border-[#26314A] text-gray-300 active:scale-95 transition flex items-center justify-center">
+          <i class="fa-solid fa-rotate-right text-xs" id="syncIcon"></i>
         </button>
-        <button onclick="logout()" class="w-8 h-8 rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:text-red-300 transition flex items-center justify-center">
-          <i class="fa-solid fa-power-off"></i>
+        <!-- In-app Logout without leaving to external browser -->
+        <button onclick="logoutInApp()" title="Logout" class="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 active:scale-95 transition flex items-center justify-center">
+          <i class="fa-solid fa-power-off text-xs"></i>
         </button>
       </div>
     </header>
 
     <!-- TAB 1: WORKFORCE TELEMETRY -->
-    <section id="tab-login" class="flex-1 p-4 max-w-md mx-auto w-full space-y-4 mt-2">
+    <section id="tab-login" class="flex-1 p-4 max-w-md mx-auto w-full space-y-4 mt-1">
       
       <div class="flex justify-between items-end px-1">
         <h3 class="font-bold text-gray-400 uppercase tracking-widest text-[10px]">Real-Time Shift Status</h3>
-        <span class="text-gray-500 font-mono text-[9px] bg-[#0F1523] px-2 py-1 rounded border border-[#26314A]" id="liveDate">Today</span>
+        <span class="text-gray-400 font-mono text-[9px] bg-[#0F1523] px-2 py-0.5 rounded border border-[#26314A]" id="liveDate">Today</span>
       </div>
 
       <!-- Main Telemetry Card -->
       <div class="corporate-card p-5 relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500" id="statusLine"></div>
+        <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500 transition-colors" id="statusLine"></div>
         
-        <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-4 ml-2">
+        <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-4 ml-1">
           <div>
             <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest block mb-0.5">Compliance Target</span>
             <p class="text-[11px] font-bold text-gray-300 font-mono" id="targetLabel">> 07:01:00 Required</p>
           </div>
-          <span id="liveBadge" class="px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-[#1A2234] text-gray-400 border border-[#26314A]">Connecting</span>
+          <span id="liveBadge" class="px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider bg-[#1A2234] text-gray-400 border border-[#26314A]">Connecting</span>
         </div>
 
-        <div class="text-center ml-2">
-          <span class="text-[10px] font-bold uppercase text-gray-500 tracking-widest block mb-1">Net Production</span>
+        <div class="text-center ml-1">
+          <span class="text-[10px] font-bold uppercase text-gray-400 tracking-widest block mb-1">Net Production Time</span>
           <p class="text-4xl font-black text-white font-mono tracking-tight drop-shadow-md" id="liveNet">00:00:00</p>
           
-          <div class="mt-4 w-full bg-[#1A2234] h-1.5 rounded-full overflow-hidden border border-[#26314A]">
+          <!-- Dynamic Progress Bar -->
+          <div class="mt-4 w-full bg-[#1A2234] h-2 rounded-full overflow-hidden border border-[#26314A]">
             <div id="liveProgress" class="bg-blue-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(59,130,246,0.6)]" style="width: 0%;"></div>
           </div>
           <div class="flex justify-between items-center mt-1.5 text-[9px] font-mono font-bold text-gray-500">
-            <span>00:00:00</span>
+            <span id="progressBarCurrent">00:00:00</span>
             <span id="progressBarTarget">07:01:00</span>
           </div>
         </div>
@@ -215,11 +224,11 @@
 
       <div class="grid grid-cols-2 gap-3">
         <div class="corporate-card p-4 flex flex-col justify-center border-l-2 border-l-gray-600 bg-gradient-to-r from-[#1A2234]/30 to-transparent">
-          <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest mb-1">Total Break</span>
+          <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest mb-1 flex items-center gap-1.5"><i class="fa-solid fa-mug-hot text-amber-500/80"></i> Total Break</span>
           <span class="font-mono text-lg font-bold text-gray-200" id="liveBreak">00:00:00</span>
         </div>
         <div class="corporate-card p-4 flex flex-col justify-center border-l-2 border-l-gray-600 bg-gradient-to-r from-[#1A2234]/30 to-transparent">
-          <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest mb-1">Gross Login</span>
+          <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest mb-1 flex items-center gap-1.5"><i class="fa-solid fa-business-time text-blue-400"></i> Gross Login</span>
           <span class="font-mono text-lg font-bold text-gray-200" id="liveGross">00:00:00</span>
         </div>
       </div>
@@ -231,20 +240,20 @@
     </section>
 
     <!-- TAB 2: GOVERNANCE & ACCOUNTABILITY -->
-    <section id="tab-profile" class="hidden flex-1 p-4 max-w-md mx-auto w-full space-y-4 mt-2">
+    <section id="tab-profile" class="hidden flex-1 p-4 max-w-md mx-auto w-full space-y-4 mt-1">
       
       <div class="flex justify-between items-end px-1">
         <h3 class="font-bold text-gray-400 uppercase tracking-widest text-[10px]">Policy Compliance & Risk</h3>
       </div>
 
       <!-- 1. STRIKE ENGINE -->
-      <div class="corporate-card p-5 border border-red-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A0B0B]/60 shadow-[0_4px_15px_rgba(239,68,68,0.05)]">
+      <div class="corporate-card p-5 border border-red-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A0B0B]/60 shadow-[0_4px_15px_rgba(239,68,68,0.08)]">
         <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-3">
           <div class="flex items-center space-x-2 text-red-500">
             <i class="fa-solid fa-triangle-exclamation text-sm"></i>
             <h3 class="font-bold text-[10px] uppercase tracking-widest">Attendance Violations</h3>
           </div>
-          <span id="strikeBadge" class="text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]">0 Active</span>
+          <span id="strikeBadge" class="text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-400 uppercase tracking-wider border border-[#26314A]">0 Active</span>
         </div>
 
         <div class="flex justify-between items-center mb-4">
@@ -252,15 +261,16 @@
             <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Termination Risk</span>
             <div class="flex items-baseline space-x-1 mt-0.5">
               <span class="text-3xl font-black text-white font-mono" id="valStrikes">0</span>
-              <span class="text-[9px] text-red-500/70 font-bold uppercase">/ 4 Max</span>
+              <span class="text-[9px] text-red-500/80 font-bold uppercase">/ 4 Terminate</span>
             </div>
           </div>
           <div class="text-right">
             <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Action Status</span>
-            <p class="text-[10px] font-bold text-gray-300 mt-0.5 uppercase" id="strikeStatus">Good Standing</p>
+            <p class="text-[10px] font-bold text-gray-200 mt-0.5 uppercase" id="strikeStatus">Good Standing</p>
           </div>
         </div>
 
+        <!-- Danger Slots for Strikes -->
         <div class="grid grid-cols-4 gap-2 mb-4">
           <div id="sb1" class="penalty-slot"></div>
           <div id="sb2" class="penalty-slot"></div>
@@ -268,20 +278,20 @@
           <div id="sb4" class="penalty-slot"></div>
         </div>
 
-        <div class="bg-black/30 p-2.5 rounded border border-white/5 text-[9px] flex justify-between items-center">
-          <span class="text-gray-400 font-bold uppercase tracking-wider">Recovery Target (Weeks)</span>
-          <span class="text-gray-300 font-mono font-bold"><span id="valConsistent" class="text-emerald-500">0</span> / 3</span>
+        <div class="bg-black/40 p-2.5 rounded-lg border border-white/5 text-[9px] flex justify-between items-center">
+          <span class="text-gray-400 font-bold uppercase tracking-wider">Recovery Target (Consistent Weeks)</span>
+          <span class="text-gray-200 font-mono font-bold"><span id="valConsistent" class="text-emerald-400">0</span> / 3</span>
         </div>
       </div>
 
       <!-- 2. FLAG ENGINE -->
-      <div class="corporate-card p-5 border border-orange-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A120B]/60 shadow-[0_4px_15px_rgba(245,158,11,0.05)]">
+      <div class="corporate-card p-5 border border-orange-900/40 bg-gradient-to-b from-[#0F1523] to-[#1A120B]/60 shadow-[0_4px_15px_rgba(245,158,11,0.08)]">
         <div class="flex justify-between items-center border-b border-[#26314A] pb-3 mb-3">
           <div class="flex items-center space-x-2 text-orange-500">
             <i class="fa-solid fa-flag text-sm"></i>
             <h3 class="font-bold text-[10px] uppercase tracking-widest">Performance Flags</h3>
           </div>
-          <span id="flagBadge" class="text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]">0 Active</span>
+          <span id="flagBadge" class="text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-400 uppercase tracking-wider border border-[#26314A]">0 Active</span>
         </div>
 
         <div class="flex justify-between items-center mb-4">
@@ -289,15 +299,16 @@
             <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Review Risk</span>
             <div class="flex items-baseline space-x-1 mt-0.5">
               <span class="text-3xl font-black text-white font-mono" id="valFlags">0</span>
-              <span class="text-[9px] text-orange-500/70 font-bold uppercase">/ 4 Max</span>
+              <span class="text-[9px] text-orange-500/80 font-bold uppercase">/ 4 Review</span>
             </div>
           </div>
           <div class="text-right">
             <span class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Governance</span>
-            <p class="text-[10px] font-bold text-gray-300 mt-0.5 uppercase" id="flagStatus">Active / Normal</p>
+            <p class="text-[10px] font-bold text-gray-200 mt-0.5 uppercase" id="flagStatus">Active / Normal</p>
           </div>
         </div>
 
+        <!-- Danger Slots for Flags -->
         <div class="grid grid-cols-4 gap-2 mb-4">
           <div id="fb1" class="penalty-slot"></div>
           <div id="fb2" class="penalty-slot"></div>
@@ -305,7 +316,7 @@
           <div id="fb4" class="penalty-slot"></div>
         </div>
 
-        <div class="bg-black/30 p-2.5 rounded border border-white/5 text-[9px] flex justify-between items-center">
+        <div class="bg-black/40 p-2.5 rounded-lg border border-white/5 text-[9px] flex justify-between items-center">
           <span class="text-gray-400 font-bold uppercase tracking-wider">Current Score Band</span>
           <span class="text-blue-400 font-bold uppercase" id="valScoreBand">Good Standing</span>
         </div>
@@ -313,7 +324,7 @@
     </section>
 
     <!-- CORPORATE BOTTOM NAVIGATION -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#0F1523]/95 backdrop-blur-md border-t border-[#26314A] pb-safe shadow-[0_-4px_15px_rgba(0,0,0,0.3)]">
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#0F1523]/95 backdrop-blur-md border-t border-[#26314A] pb-safe shadow-[0_-4px_15px_rgba(0,0,0,0.4)]">
       <div class="max-w-md mx-auto flex">
         <button onclick="switchTab('login')" id="btnTabLogin" class="flex-1 flex flex-col items-center justify-center py-3 text-blue-500 font-bold text-[9px] uppercase tracking-widest transition bg-blue-500/10 border-t-2 border-blue-500">
           <i class="fa-solid fa-satellite-dish text-base mb-1"></i>
@@ -328,22 +339,88 @@
   </div>
 
   <script>
+    // Live Google Apps Script Web App Endpoint
     const APP_URL = "https://script.google.com/macros/s/AKfycbwlIyDugTAU-codhmJZ7OH_Q-5RYW6blDidh8uBWw7Nkka6-KcI_5Dr6Qx-cJIkefe2/exec";
 
+    // Fallback Logo Generator in SVG matching TARA logo exactly
+    function loadFallbackLogo(imgElement, isLarge) {
+      const w = isLarge ? 170 : 80;
+      const h = isLarge ? 64 : 30;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="${w}" height="${h}">
+        <g transform="translate(10, 5)">
+          <!-- Red Figure -->
+          <circle cx="36" cy="18" r="14" fill="#EF4444"/>
+          <path d="M 10 32 Q 40 30 75 25 Q 78 28 65 36 Q 40 38 12 36 Z" fill="#EF4444"/>
+          <path d="M 12 40 C 12 40 8 68 34 68 C 50 68 52 50 52 40 Z" fill="#EF4444"/>
+          <!-- Light Blue Figure -->
+          <circle cx="100" cy="24" r="13" fill="#BFDBFE"/>
+          <path d="M 72 37 Q 100 37 135 43 Q 133 46 118 48 Q 95 44 75 42 Z" fill="#BFDBFE"/>
+          <path d="M 102 46 C 102 46 98 68 120 68 C 135 68 135 55 135 46 Z" fill="#BFDBFE"/>
+        </g>
+      </svg>`;
+      imgElement.src = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+
+    // Native Web Audio Chime (Runs locally on device, zero external latency)
     function playSuccessSound() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.6);
+        osc.stop(audioCtx.currentTime + 0.5);
       } catch(e) {}
+    }
+
+    // 24-HOUR / ONCE-A-DAY PERSISTENT SESSION MANAGEMENT
+    function getStoredSession() {
+      try {
+        const raw = localStorage.getItem("tara_fbo_session");
+        if (!raw) return null;
+        const sess = JSON.parse(raw);
+        if (!sess || !sess.loginTimestamp) return null;
+        
+        // Auto-logout rule: Expire if date has changed (Midnight Reset) or > 24 hours
+        const loginDate = new Date(sess.loginTimestamp).toDateString();
+        const currentDate = new Date().toDateString();
+        const hoursPassed = (Date.now() - sess.loginTimestamp) / (1000 * 60 * 60);
+
+        if (loginDate !== currentDate || hoursPassed >= 24) {
+          localStorage.removeItem("tara_fbo_session");
+          return null; // Expired, requires re-login today
+        }
+        return sess;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveSession(email, pass, payload) {
+      const sess = {
+        email: email,
+        pass: pass,
+        loginTimestamp: Date.now(),
+        payload: payload
+      };
+      localStorage.setItem("tara_fbo_session", JSON.stringify(sess));
+    }
+
+    // In-App Logout (Keeps user in Kodular WebViewer without triggering external browser intent)
+    function logoutInApp() {
+      localStorage.removeItem("tara_fbo_session");
+      document.getElementById("mainPortal").classList.add("hidden");
+      document.getElementById("loginModal").classList.remove("hidden");
+      document.getElementById("inputPass").value = "";
+      const err = document.getElementById("authError");
+      err.classList.add("hidden");
     }
 
     function handleAuthSubmit(e) {
@@ -353,31 +430,33 @@
       const btn = document.getElementById("btnSubmit");
       const err = document.getElementById("authError");
 
-      btn.innerHTML = '<div class="spinner"></div> <span class="ml-2">Authenticating...</span>';
+      btn.innerHTML = '<div class="spinner"></div> <span class="ml-2">Verifying Credentials...</span>';
       btn.disabled = true;
       err.classList.add("hidden");
 
       fetchDataDirect(email, pass, function(res) {
-        btn.innerHTML = '<span>Secure Sign In</span>';
+        btn.innerHTML = '<span>Authorize & Sign In</span>';
         btn.disabled = false;
         
         if (res && res.status === "success") {
           playSuccessSound();
-          sessionStorage.setItem("tara_corp_session", JSON.stringify({ email: email, pass: pass, payload: res }));
+          saveSession(email, pass, res);
           renderPortal(res);
         } else {
-          err.innerText = (res && res.message) ? res.message : "Access Denied.";
+          err.innerText = (res && res.message) ? res.message : "Access Denied. Check credentials.";
           err.classList.remove("hidden");
         }
       });
     }
 
+    // High-Performance Zero-CORS JSONP Fetch with fast fallback
     function fetchDataDirect(email, pass, cb) {
       let resolved = false;
       const targetUrl = `${APP_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`;
+      const cbName = "tara_jsonp_" + Date.now();
 
-      const cbName = "tara_corp_" + Date.now();
       window[cbName] = function(jsonpData) {
+        if (resolved) return;
         resolved = true;
         delete window[cbName];
         const sNode = document.getElementById(cbName);
@@ -387,21 +466,21 @@
 
       const s = document.createElement("script");
       s.id = cbName;
-      s.src = `${targetUrl}&callback=${cbName}`;
+      s.src = `${targetUrl}&callback=${cbName}&_t=${Date.now()}`;
       s.onerror = function() {
         if (!resolved) { 
           resolved = true; 
-          fetch(targetUrl).then(r=>r.json()).then(d=>cb(d)).catch(()=>cb({status:"error", message:"Network error."}));
+          fetch(targetUrl).then(r=>r.json()).then(d=>cb(d)).catch(()=>cb({status:"error", message:"Network request failed."}));
         }
       };
       document.head.appendChild(s);
       
       setTimeout(()=>{ 
         if(!resolved) { 
-          resolved=true; 
-          cb({status:"error", message:"Request timed out. Please check your network."}); 
+          resolved = true; 
+          cb({status:"error", message:"Connection timed out. Retrying sync..."}); 
         } 
-      }, 15000);
+      }, 12000);
     }
 
     function renderPortal(data) {
@@ -414,11 +493,12 @@
       document.getElementById("userStreak").innerText = data.streak || 0;
 
       const l = data.live || {};
-      const isPt = p.workingType.includes("Part");
+      const isPt = (p.workingType || "").toLowerCase().includes("part");
       
       const requiredText = isPt ? "04:01:00" : "07:01:00";
       document.getElementById("targetLabel").innerText = `> ${requiredText} Required`;
       document.getElementById("progressBarTarget").innerText = l.targetStr || requiredText;
+      document.getElementById("progressBarCurrent").innerText = l.netLogin || "00:00:00";
       
       document.getElementById("liveDate").innerText = l.date || "Today";
       document.getElementById("liveNet").innerText = l.netLogin || "00:00:00";
@@ -433,22 +513,22 @@
       badge.innerText = l.badge || "In Shift";
       
       if (l.isMet) {
-        badge.className = "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
-        sLine.className = "absolute top-0 left-0 w-1 h-full bg-emerald-500";
+        badge.className = "px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+        sLine.className = "absolute top-0 left-0 w-1.5 h-full bg-emerald-500";
         pBar.className = "bg-emerald-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(16,185,129,0.8)]";
-      } else if (l.netLogin !== "00:00:00") {
-        badge.className = "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30";
-        sLine.className = "absolute top-0 left-0 w-1 h-full bg-blue-500";
+      } else if (l.netLogin && l.netLogin !== "00:00:00") {
+        badge.className = "px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30";
+        sLine.className = "absolute top-0 left-0 w-1.5 h-full bg-blue-500";
         pBar.className = "bg-blue-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(59,130,246,0.8)]";
       } else {
-        badge.className = "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30";
-        sLine.className = "absolute top-0 left-0 w-1 h-full bg-red-500";
+        badge.className = "px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30";
+        sLine.className = "absolute top-0 left-0 w-1.5 h-full bg-red-500";
         pBar.className = "bg-red-500 h-full rounded-full transition-all duration-700 ease-out";
       }
 
       setTimeout(() => { pBar.style.width = (l.pct || 0) + "%"; }, 100);
 
-      // --- STRIKES ---
+      // --- STRIKES (Danger Slots) ---
       const str = parseInt(data.attendance.strikes) || 0;
       const cw = parseInt(data.attendance.consistentWeeks) || 0;
       document.getElementById("valStrikes").innerText = str;
@@ -456,8 +536,8 @@
       let strStatus = data.attendance.status || "Good Standing";
       if(str >= 4) strStatus = "TERMINATION REVIEW";
       document.getElementById("strikeStatus").innerText = strStatus;
-      if(str >= 3) document.getElementById("strikeStatus").classList.add("text-red-400");
-      else document.getElementById("strikeStatus").classList.remove("text-red-400");
+      if(str >= 3) document.getElementById("strikeStatus").className = "text-[10px] font-bold text-red-400 mt-0.5 uppercase";
+      else document.getElementById("strikeStatus").className = "text-[10px] font-bold text-gray-200 mt-0.5 uppercase";
 
       document.getElementById("valConsistent").innerText = cw;
 
@@ -467,22 +547,22 @@
         sBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase tracking-wider";
       } else {
         sBadge.innerText = "0 Active";
-        sBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]";
+        sBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-400 uppercase tracking-wider border border-[#26314A]";
       }
 
       for (let i = 1; i <= 4; i++) {
         document.getElementById("sb" + i).className = i <= str ? "penalty-slot active-strike" : "penalty-slot";
       }
 
-      // --- FLAGS ---
+      // --- FLAGS (Danger Slots) ---
       const flg = parseInt(data.performance.flags) || 0;
       document.getElementById("valFlags").innerText = flg;
       
       let flgStatus = data.performance.status || "Active / Normal";
       if(flg >= 4) flgStatus = "PERFORMANCE REVIEW";
       document.getElementById("flagStatus").innerText = flgStatus;
-      if(flg >= 3) document.getElementById("flagStatus").classList.add("text-orange-400");
-      else document.getElementById("flagStatus").classList.remove("text-orange-400");
+      if(flg >= 3) document.getElementById("flagStatus").className = "text-[10px] font-bold text-orange-400 mt-0.5 uppercase";
+      else document.getElementById("flagStatus").className = "text-[10px] font-bold text-gray-200 mt-0.5 uppercase";
       
       document.getElementById("valScoreBand").innerText = data.performance.scoreBand || "Good Standing";
 
@@ -492,7 +572,7 @@
         fBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 uppercase tracking-wider";
       } else {
         fBadge.innerText = "0 Active";
-        fBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-500 uppercase tracking-wider border border-[#26314A]";
+        fBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded bg-[#1A2234] text-gray-400 uppercase tracking-wider border border-[#26314A]";
       }
 
       for (let j = 1; j <= 4; j++) {
@@ -520,32 +600,29 @@
     }
 
     function syncData() {
-      const sess = JSON.parse(sessionStorage.getItem("tara_corp_session") || "{}");
-      if (!sess.email) return;
+      const sess = getStoredSession();
+      if (!sess || !sess.email) return;
 
       const icon = document.getElementById("syncIcon");
       icon.classList.add("animate-spin");
 
       fetchDataDirect(sess.email, sess.pass, function(res) {
-        setTimeout(() => icon.classList.remove("animate-spin"), 500);
+        setTimeout(() => icon.classList.remove("animate-spin"), 400);
         if (res && res.status === "success") {
           playSuccessSound();
-          sess.payload = res;
-          sessionStorage.setItem("tara_corp_session", JSON.stringify(sess));
+          saveSession(sess.email, sess.pass, res);
           renderPortal(res);
         }
       });
     }
 
-    function logout() {
-      sessionStorage.removeItem("tara_corp_session");
-      location.reload();
-    }
-
+    // Auto-login if session valid for today (24-hour persistent check)
     window.onload = function() {
-      const sess = JSON.parse(sessionStorage.getItem("tara_corp_session") || "{}");
+      const sess = getStoredSession();
       if (sess && sess.payload) {
         renderPortal(sess.payload);
+        // Background silent refresh for live stats
+        syncData();
       }
     };
   </script>
